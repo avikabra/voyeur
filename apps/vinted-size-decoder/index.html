@@ -165,14 +165,17 @@ caption{
   font-size:.78rem;color:var(--muted);line-height:1.45;border-bottom:1px solid var(--rule);
 }
 caption b{color:var(--ink-soft);display:block;font-size:.85rem;margin-bottom:.15rem}
-th,td{padding:.6rem .7rem;text-align:left;border-top:1px solid var(--rule);vertical-align:top}
+th,td{padding:.6rem .45rem;text-align:left;border-top:1px solid var(--rule);vertical-align:top}
+th:first-child,td:first-child{padding-left:.7rem}
+th:last-child,td:last-child{padding-right:.7rem}
 thead th{
   border-top:0;background:var(--panel);color:var(--muted);font-weight:600;
   font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;line-height:1.35;
 }
-tbody th{font-weight:600;color:var(--ink);font-family:var(--serif);font-size:1.05rem}
+tbody th{font-weight:600;color:var(--ink);font-family:var(--serif);font-size:1.05rem;white-space:nowrap}
+tbody td b{font-weight:600;color:var(--ink)}
 td.na{color:var(--muted)}
-.conf{display:block;font-size:.78rem;color:var(--muted);margin-top:.1rem}
+.conf{display:block;font-size:.78rem;color:var(--muted);margin-top:.1rem;line-height:1.35}
 
 /* checklist ------------------------------------------------------------- */
 .checklist{list-style:none;margin:0 0 1rem;padding:0;border-top:1px solid var(--rule)}
@@ -195,6 +198,7 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
   .tool{padding:1.6rem}
   .sizes{grid-template-columns:repeat(6,1fr)}
   .answer{font-size:1.35rem}
+  th,td{padding:.6rem .7rem}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -300,25 +304,25 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
         </caption>
         <thead>
           <tr>
-            <th scope="col">Your UK size</th>
+            <th scope="col">Your size</th>
             <th scope="col">New bucket</th>
             <th scope="col">Also tick</th>
-            <th scope="col">Old label you may still see</th>
+            <th scope="col">Old label</th>
           </tr>
         </thead>
         <tbody>
-          <tr><th scope="row">UK 4</th><td>XS (UK 4&ndash;6)</td><td class="na">nothing smaller is documented</td><td class="na">not documented</td></tr>
-          <tr><th scope="row">UK 6</th><td>XS (UK 4&ndash;6)</td><td>S (UK 8&ndash;10)</td><td>XS / 6 <span class="conf">less certain</span></td></tr>
-          <tr><th scope="row">UK 8</th><td>S (UK 8&ndash;10)</td><td>XS (UK 4&ndash;6)</td><td>S / 8</td></tr>
-          <tr><th scope="row">UK 10</th><td>S (UK 8&ndash;10)</td><td>M (UK 12&ndash;14)</td><td>M / 10</td></tr>
-          <tr><th scope="row">UK 12</th><td>M (UK 12&ndash;14)</td><td>S (UK 8&ndash;10)</td><td>L / 12</td></tr>
-          <tr><th scope="row">UK 14</th><td>M (UK 12&ndash;14)</td><td>L (UK 16&ndash;18)</td><td>XL / 14</td></tr>
-          <tr><th scope="row">UK 16</th><td>L (UK 16&ndash;18)</td><td>M (UK 12&ndash;14)</td><td>XXL / 16</td></tr>
-          <tr><th scope="row">UK 18</th><td>L (UK 16&ndash;18)</td><td>XL (UK 20&ndash;22)</td><td class="na">not documented</td></tr>
-          <tr><th scope="row">UK 20</th><td>XL (UK 20&ndash;22)</td><td>L (UK 16&ndash;18)</td><td class="na">not documented</td></tr>
-          <tr><th scope="row">UK 22</th><td>XL (UK 20&ndash;22)</td><td>XXL (UK 24&ndash;26)</td><td class="na">not documented</td></tr>
-          <tr><th scope="row">UK 24</th><td>XXL (UK 24&ndash;26)</td><td>XL (UK 20&ndash;22)</td><td class="na">not documented</td></tr>
-          <tr><th scope="row">UK 26</th><td>XXL (UK 24&ndash;26)</td><td class="na">nothing larger is documented</td><td class="na">not documented</td></tr>
+          <tr><th scope="row">UK 4</th><td><b>XS</b><span class="conf">UK 4&ndash;6</span></td><td class="na">nothing smaller documented</td><td class="na">not documented</td></tr>
+          <tr><th scope="row">UK 6</th><td><b>XS</b><span class="conf">UK 4&ndash;6</span></td><td><b>S</b><span class="conf">UK 8&ndash;10</span></td><td>XS / 6 <span class="conf">less certain</span></td></tr>
+          <tr><th scope="row">UK 8</th><td><b>S</b><span class="conf">UK 8&ndash;10</span></td><td><b>XS</b><span class="conf">UK 4&ndash;6</span></td><td>S / 8</td></tr>
+          <tr><th scope="row">UK 10</th><td><b>S</b><span class="conf">UK 8&ndash;10</span></td><td><b>M</b><span class="conf">UK 12&ndash;14</span></td><td>M / 10</td></tr>
+          <tr><th scope="row">UK 12</th><td><b>M</b><span class="conf">UK 12&ndash;14</span></td><td><b>S</b><span class="conf">UK 8&ndash;10</span></td><td>L / 12</td></tr>
+          <tr><th scope="row">UK 14</th><td><b>M</b><span class="conf">UK 12&ndash;14</span></td><td><b>L</b><span class="conf">UK 16&ndash;18</span></td><td>XL / 14</td></tr>
+          <tr><th scope="row">UK 16</th><td><b>L</b><span class="conf">UK 16&ndash;18</span></td><td><b>M</b><span class="conf">UK 12&ndash;14</span></td><td>XXL / 16</td></tr>
+          <tr><th scope="row">UK 18</th><td><b>L</b><span class="conf">UK 16&ndash;18</span></td><td><b>XL</b><span class="conf">UK 20&ndash;22</span></td><td class="na">not documented</td></tr>
+          <tr><th scope="row">UK 20</th><td><b>XL</b><span class="conf">UK 20&ndash;22</span></td><td><b>L</b><span class="conf">UK 16&ndash;18</span></td><td class="na">not documented</td></tr>
+          <tr><th scope="row">UK 22</th><td><b>XL</b><span class="conf">UK 20&ndash;22</span></td><td><b>XXL</b><span class="conf">UK 24&ndash;26</span></td><td class="na">not documented</td></tr>
+          <tr><th scope="row">UK 24</th><td><b>XXL</b><span class="conf">UK 24&ndash;26</span></td><td><b>XL</b><span class="conf">UK 20&ndash;22</span></td><td class="na">not documented</td></tr>
+          <tr><th scope="row">UK 26</th><td><b>XXL</b><span class="conf">UK 24&ndash;26</span></td><td class="na">nothing larger documented</td><td class="na">not documented</td></tr>
         </tbody>
       </table>
     </div>
