@@ -893,7 +893,9 @@ function robotsTxt() {
 }
 
 function sitemapXml(apps) {
-  const urls = ['/', '/about/'].concat(apps.map((a) => '/apps/' + a.slug + '/'));
+  const urls = ['/', '/about/'].concat(
+    apps.flatMap((a) => ['/apps/' + a.slug + '/', '/apps/' + a.slug + '/app/'])
+  );
   const body = urls
     .map((u) => '  <url><loc>' + esc(SITE_URL + u) + '</loc></url>')
     .join('\n');
