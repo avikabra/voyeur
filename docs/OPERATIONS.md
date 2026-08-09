@@ -69,23 +69,36 @@ Runs will fail: timeouts, a bad deploy, a dead dependency, a session that just g
 
 If a run's failure was caused by something in these docs being wrong or stale, fix the docs. That's the whole feedback loop.
 
-## Vercel quota stewardship
+## Deployment stewardship
 
-Free (hobby) tier. **Verify current limits before relying on these numbers — they change.** As of Aug 2026: roughly 100 deploys/day, a cap on total projects, 100GB/month bandwidth shared across every project on the account.
+Hosting is **GitHub Pages** (see ARCHITECTURE for the model and for why Vercel is currently
+blocked). Practical rules:
 
-- **Bandwidth is shared.** A 90MB model file on one popular app degrades every other app. Keep assets lean; that's an architectural constraint, not an optimization.
-- **Deploys are cheap but not free.** A tight fix-and-redeploy loop can burn the daily budget fast. Verify locally, deploy once. If you're on your fifth deploy of one app in a run, stop and debug properly.
-- **Project count is finite.** One project per app plus the site. As this grows, retiring dead apps stops being hygiene and starts being necessary — delete retired projects.
-- **Check before you deploy.** Use the Vercel MCP tools to see current usage. Near a limit, back off: finish the build, mark it `wip`, note in the log that it's deploy-blocked, and let the next cycle ship it. Never disable a limit or upgrade a tier — that violates the zero-cost invariant, and there's no budget behind it.
+- Ship = push to `main` (workflow republishes `gh-pages`) or force-push `gh-pages` directly.
+  Verify every ship via the Actions API: the "pages build and deployment" run must be green.
+  Content can be double-checked at `raw.githubusercontent.com/avikabra/voyeur/gh-pages/...`,
+  which IS reachable from the sandbox even though `github.io` is egress-blocked.
+- Keep the whole site light (soft limits ~1GB / ~100GB-month). No huge model files without
+  thinking about what they do to every other app's bandwidth.
+- Two orphaned Vercel projects (`voyeur-catalog`, `voyeur-catalog-site`) were created during the
+  pilot's failed Vercel attempt; sessions cannot delete them — the owner should.
 
-## Not yet armed
+## Armed — 2026-08-09
 
-**The schedule is designed. The trigger does not exist yet.**
+The pilot ran on 2026-08-09 (see `pipeline/state/runs/2026-08-09-0530-pilot.md`): catalog built
+and live, first app (vinted-size-decoder) scouted from live demand, built, adversarially tested
+(three independent agents; one honesty blocker and ~12 fixes caught and applied), shipped, and
+deploy-verified. The Routine is armed: **every 4 hours, fresh session per firing**, bootstrap
+prompt as above. Owner decision on record: **no notifications** — not on ship, not on failure.
+The catalog and git history are the record.
 
-Arming it requires a **first supervised pilot run**: a human watches one complete cycle end to end and confirms the loop actually works — that Scout surfaces real signal, that the adversarial loop catches real problems, that deploy verification is honest, and that the state files leave a session-resumable trail.
+Hard-won facts every scheduled session should know (all discovered the expensive way in the pilot):
 
-Until that pilot passes, this repo is documentation and seed state. Do not create the Routine before then.
-
-**The pilot's first job is the catalog site itself.** `site/` doesn't exist yet. It's the first thing the pipeline builds, and it goes through the same stages as any app — plan, build, adversarial loop (Playwright against the real deploy), verified ship. An empty catalog that works is the correct starting state; the first app then has somewhere to land.
-
-When it's time to arm, a `create_trigger` call with a 4-hour cron and the bootstrap prompt above, fresh session per firing, is the intended shape. Owner decision on record: **no notifications** — not on ship, not on failure. The catalog and the git history are the record. Anyone who wants to know what happened reads the run logs.
+- Egress is blocked for almost all domains; WebSearch is the scouting instrument, and
+  reddit.com is invisible to it — see RESEARCH pilot corrections for what to mine instead.
+- Deploys go through gh-pages (see Deployment stewardship). Verify via the Actions API and
+  raw.githubusercontent.com — you cannot fetch github.io from the sandbox.
+- Playwright works locally: Playwright's own browser CDN is blocked, but `@sparticuz/chromium`
+  from npm ships a usable binary — launch via `executablePath`.
+- Subagents can die mid-flight on account session limits; write state before launching waves,
+  and if agents die, check whether the limit has reset before assuming the approach failed.

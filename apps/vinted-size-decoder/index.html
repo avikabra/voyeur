@@ -3,13 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>What do Vinted's S/M/L sizes actually mean? — Vinted Size Decoder</title>
-<meta name="description" content="Vinted replaced UK numeric sizes with S/M/L ranges. Find which bucket your UK size falls in, which boxes to actually tick so you stop missing listings, and what to write when you sell. Free, no account, works offline.">
+<title>What do Vinted's S/M/L sizes actually mean? — Size Decoder for Vinted</title>
+<meta name="description" content="Which Vinted S/M/L bucket your UK size falls in, which boxes to tick so you stop missing listings, and what to write when you sell. Free, no account.">
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="index,follow">
-<meta property="og:title" content="What do Vinted's S/M/L sizes actually mean?">
+<link rel="canonical" href="https://avikabra.github.io/voyeur/apps/vinted-size-decoder/app/">
+<meta property="og:title" content="What do Vinted's S/M/L sizes actually mean? · Voyeur (unofficial)">
 <meta property="og:description" content="A plain decoder for Vinted's UK womenswear size buckets: what S, M, L map to, which boxes to tick, and how to list so buyers can find you.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://avikabra.github.io/voyeur/apps/vinted-size-decoder/app/">
+<meta property="og:site_name" content="Voyeur">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23faf8f5'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='19' font-weight='600' text-anchor='middle' fill='%239a3d18'%3EM%3C/text%3E%3C/svg%3E">
 <style>
 *,*::before,*::after{box-sizing:border-box}
@@ -113,6 +116,7 @@ details.timeline summary:hover{color:var(--accent)}
 .sizes button:hover{border-color:var(--accent);color:var(--accent)}
 .sizes button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
 .sizes .uk{display:block;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;opacity:.6}
+.sizes button[aria-pressed="true"] .uk{opacity:.9}
 
 .result{border-top:1px solid var(--rule-strong);padding-top:1.15rem}
 .result .placeholder{margin:0;color:var(--muted);font-size:.95rem}
@@ -121,6 +125,10 @@ details.timeline summary:hover{color:var(--accent)}
   display:inline-block;background:var(--accent);color:var(--bg);
   padding:.05em .4em;font-weight:600;
 }
+/* keep the sentence-final full stop welded to the badge, without stopping the
+   badge itself from wrapping on a narrow or zoomed screen */
+.answer .end{white-space:nowrap}
+.answer .end .big{white-space:normal}
 .callout{background:var(--accent-soft);border-left:2px solid var(--accent);padding:.7rem .85rem;margin:0 0 1.15rem;font-size:.93rem;color:var(--ink-soft)}
 .callout strong{color:var(--ink)}
 .block{margin:0 0 1.15rem}
@@ -138,6 +146,8 @@ ul.ticks .why{display:block;color:var(--muted);font-size:.88rem;margin-top:.25re
 ul.plain{margin:0 0 1rem;padding-left:1.1rem;color:var(--ink-soft);font-size:.95rem}
 ul.plain li{margin:0 0 .45rem}
 .note{font-size:.88rem;color:var(--muted);margin:0}
+.note.precheck{margin:0 0 .85rem}
+.note.title-tip{margin:.55rem 0 .35rem;color:var(--ink-soft)}
 
 pre{
   margin:0 0 .6rem;padding:.8rem .9rem;background:var(--bg);
@@ -204,11 +214,9 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
 </style>
 </head>
 <body>
-<script>document.documentElement.className+=" js";</script>
-
 <header class="masthead">
   <div class="wrap">
-    <a class="wordmark" href="https://voyeur-catalog-avis-projects-b828fa0e.vercel.app">Voyeur</a>
+    <a class="wordmark" href="https://avikabra.github.io/voyeur/">Voyeur</a>
   </div>
 </header>
 
@@ -216,21 +224,7 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
 <div class="wrap">
 
   <h1>What do Vinted&#39;s S/M/L sizes actually mean?</h1>
-  <p class="lede">Vinted swapped UK numeric sizes for letter buckets, so ticking &ldquo;14&rdquo; now hands you 12s. Here is what the letters map to, which boxes to tick so you stop missing things, and what to write when you sell.</p>
-
-  <div class="banner">
-    <p>Based on Vinted&#39;s documented <b>Nov 2025</b> sizing change for UK womenswear. Vinted has been changing this system through 2026 &mdash; accounts may see different layouts.</p>
-    <p>The tick-adjacent-buckets and check-measurements advice holds either way.</p>
-  </div>
-
-  <details class="timeline">
-    <summary>What changed, and when</summary>
-    <ul class="tl">
-      <li><b>10 Nov 2025 &mdash; the change</b>UK womenswear sizes were collapsed into letter buckets with ranges (&ldquo;S / UK 8&ndash;10&rdquo;), and existing listings were auto-converted. Widely reported by users; this is the system this page encodes.</li>
-      <li><b>~Jan 2026 &mdash; a partial reversion, unconfirmed</b>Some users reported UK numeric sizes coming back. We could not confirm it landed, or for whom. Treat it as &ldquo;some people may see numbers again&rdquo;.</li>
-      <li><b>~Jul 2026 &mdash; a per-account sizing picker, rolling out</b>Reports of a per-account &ldquo;sizing standard&rdquo; setting. If that is on your account, two people can be looking at the same listing and see different size labels. Another reason to write the number in the description.</li>
-    </ul>
-  </details>
+  <p class="lede">Vinted swapped UK numeric sizes for letter buckets &mdash; ask it for your size and the bucket hands you the other sizes in it too.</p>
 
   <div class="nojs">
     <p><b>The picker below needs JavaScript.</b> It is switched off or blocked, so you are getting the reference tables instead &mdash; they have the same mapping in them, and they are further down this page.</p>
@@ -252,6 +246,22 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
       <p class="placeholder">Pick a size above.</p>
     </div>
   </div>
+
+  <p>Below: what the letters map to, which boxes to tick so you stop missing things, and what to write when you sell.</p>
+
+  <div class="banner">
+    <p>Based on the widely reported <b>Nov 2025</b> sizing change for UK womenswear. Vinted has been changing this system through 2026 &mdash; accounts may see different layouts.</p>
+    <p>The tick-adjacent-buckets and check-measurements advice holds either way.</p>
+  </div>
+
+  <details class="timeline">
+    <summary>What changed, and when</summary>
+    <ul class="tl">
+      <li><b>10 Nov 2025 &mdash; the change</b>UK womenswear sizes were collapsed into letter buckets with ranges (&ldquo;S / UK 8&ndash;10&rdquo;), and existing listings were auto-converted. Widely reported by users; this is the system this page encodes.</li>
+      <li><b>~Jan 2026 &mdash; a partial reversion, unconfirmed</b>Some users reported UK numeric sizes coming back. We could not confirm it landed, or for whom. Treat it as &ldquo;some people may see numbers again&rdquo;.</li>
+      <li><b>~Jul 2026 &mdash; reports of a per-account sizing picker rolling out</b>Reports of a per-account &ldquo;sizing standard&rdquo; setting. If that is on your account, two people can be looking at the same listing and see different size labels. Another reason to write the number in the description.</li>
+    </ul>
+  </details>
 
   <section>
     <h2>Whatever the label says, check the measurements</h2>
@@ -276,7 +286,7 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
       <table>
         <caption>
           <b>Vinted UK womenswear letter sizes &mdash; old system vs new</b>
-          New system as documented from Vinted&#39;s change of 10 Nov 2025. Old system as used before that date. Compiled 9 Aug 2026 from multiple independent user reports, not from Vinted documentation.
+          New system as widely reported after Vinted&#39;s change of 10 Nov 2025. Old system as used before that date. Compiled 9 Aug 2026 from user threads on Mumsnet and press reporting of the change (ChannelX, Glossy, Yorkshire Post syndication) &mdash; not from Vinted&#39;s own documentation.
         </caption>
         <thead>
           <tr>
@@ -300,7 +310,7 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
       <table>
         <caption>
           <b>Look up your own UK size</b>
-          Same data, read the other way round. &ldquo;Also tick&rdquo; is our advice, not Vinted&#39;s: auto-converted listings are often out by one bucket, and sellers of in-between garments guess.
+          Same data, read the other way round. &ldquo;Also tick&rdquo; is our advice, not Vinted&#39;s: users report auto-converted listings landing in the wrong bucket, and sellers of in-between garments guess.
         </caption>
         <thead>
           <tr>
@@ -311,18 +321,18 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
           </tr>
         </thead>
         <tbody>
-          <tr><th scope="row">UK 4</th><td><b>XS</b><span class="conf">UK 4&ndash;6</span></td><td class="na">nothing smaller documented</td><td class="na">not documented</td></tr>
+          <tr><th scope="row">UK 4</th><td><b>XS</b><span class="conf">UK 4&ndash;6</span></td><td><b>S</b><span class="conf">UK 8&ndash;10 &mdash; optional; nothing smaller verified</span></td><td class="na">not verified</td></tr>
           <tr><th scope="row">UK 6</th><td><b>XS</b><span class="conf">UK 4&ndash;6</span></td><td><b>S</b><span class="conf">UK 8&ndash;10</span></td><td>XS / 6 <span class="conf">less certain</span></td></tr>
           <tr><th scope="row">UK 8</th><td><b>S</b><span class="conf">UK 8&ndash;10</span></td><td><b>XS</b><span class="conf">UK 4&ndash;6</span></td><td>S / 8</td></tr>
           <tr><th scope="row">UK 10</th><td><b>S</b><span class="conf">UK 8&ndash;10</span></td><td><b>M</b><span class="conf">UK 12&ndash;14</span></td><td>M / 10</td></tr>
           <tr><th scope="row">UK 12</th><td><b>M</b><span class="conf">UK 12&ndash;14</span></td><td><b>S</b><span class="conf">UK 8&ndash;10</span></td><td>L / 12</td></tr>
           <tr><th scope="row">UK 14</th><td><b>M</b><span class="conf">UK 12&ndash;14</span></td><td><b>L</b><span class="conf">UK 16&ndash;18</span></td><td>XL / 14</td></tr>
           <tr><th scope="row">UK 16</th><td><b>L</b><span class="conf">UK 16&ndash;18</span></td><td><b>M</b><span class="conf">UK 12&ndash;14</span></td><td>XXL / 16</td></tr>
-          <tr><th scope="row">UK 18</th><td><b>L</b><span class="conf">UK 16&ndash;18</span></td><td><b>XL</b><span class="conf">UK 20&ndash;22</span></td><td class="na">not documented</td></tr>
-          <tr><th scope="row">UK 20</th><td><b>XL</b><span class="conf">UK 20&ndash;22</span></td><td><b>L</b><span class="conf">UK 16&ndash;18</span></td><td class="na">not documented</td></tr>
-          <tr><th scope="row">UK 22</th><td><b>XL</b><span class="conf">UK 20&ndash;22</span></td><td><b>XXL</b><span class="conf">UK 24&ndash;26</span></td><td class="na">not documented</td></tr>
-          <tr><th scope="row">UK 24</th><td><b>XXL</b><span class="conf">UK 24&ndash;26</span></td><td><b>XL</b><span class="conf">UK 20&ndash;22</span></td><td class="na">not documented</td></tr>
-          <tr><th scope="row">UK 26</th><td><b>XXL</b><span class="conf">UK 24&ndash;26</span></td><td class="na">nothing larger documented</td><td class="na">not documented</td></tr>
+          <tr><th scope="row">UK 18</th><td><b>L</b><span class="conf">UK 16&ndash;18</span></td><td><b>XL</b><span class="conf">UK 20&ndash;22</span></td><td class="na">not verified</td></tr>
+          <tr><th scope="row">UK 20</th><td><b>XL</b><span class="conf">UK 20&ndash;22</span></td><td><b>L</b><span class="conf">UK 16&ndash;18</span></td><td class="na">not verified</td></tr>
+          <tr><th scope="row">UK 22</th><td><b>XL</b><span class="conf">UK 20&ndash;22</span></td><td><b>XXL</b><span class="conf">UK 24&ndash;26</span></td><td class="na">not verified</td></tr>
+          <tr><th scope="row">UK 24</th><td><b>XXL</b><span class="conf">UK 24&ndash;26</span></td><td><b>XL</b><span class="conf">UK 20&ndash;22</span></td><td class="na">not verified</td></tr>
+          <tr><th scope="row">UK 26</th><td><b>XXL</b><span class="conf">UK 24&ndash;26</span></td><td><b>XL</b><span class="conf">UK 20&ndash;22 &mdash; optional; nothing larger verified</span></td><td class="na">not verified</td></tr>
         </tbody>
       </table>
     </div>
@@ -343,7 +353,7 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
 <footer>
   <div class="wrap">
     <p>Not affiliated with Vinted. Free, no account, nothing leaves your browser.</p>
-    <p><a href="https://voyeur-catalog-avis-projects-b828fa0e.vercel.app">More Voyeur tools</a> &middot; <a href="https://github.com/avikabra/voyeur">Source on GitHub</a></p>
+    <p><a href="https://avikabra.github.io/voyeur/">More Voyeur tools</a> &middot; <a href="https://github.com/avikabra/voyeur">Source on GitHub</a></p>
     <p>Encoded from user reports of Vinted&#39;s Nov 2025 change, compiled 9 Aug 2026. If Vinted has changed it again, trust the measurements over this page.</p>
   </div>
 </footer>
@@ -352,8 +362,13 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
 (function () {
   'use strict';
 
+  /* Flag JS from inside this script, not a separate earlier one: if anything
+     below fails to parse or run, the class is never set and the plain-HTML
+     tables stay visible instead of a dead picker. */
+  document.documentElement.className += ' js';
+
   /* ---------------------------------------------------------------- data */
-  /* New system, documented from Vinted's change of 10 Nov 2025.           */
+  /* New system, as widely reported after Vinted's change of 10 Nov 2025.  */
   var BUCKETS = [
     { key: 'XS',  range: 'UK 4–6',   lo: 4,  hi: 6  },
     { key: 'S',   range: 'UK 8–10',  lo: 8,  hi: 10 },
@@ -394,6 +409,15 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
   }
   function full(b) { return b.key + ' (' + b.range + ')'; }
 
+  /* The bucket badge plus the sentence's full stop, welded together so the
+     stop can never be orphaned onto its own line at large text sizes. */
+  function endWithStop(text) {
+    var wrap = el('span', 'end');
+    wrap.appendChild(el('span', 'big', text));
+    wrap.appendChild(document.createTextNode('.'));
+    return wrap;
+  }
+
   /* localStorage may be disabled, blocked by the browser, or throw on
      access in private mode. Never let that break the page. */
   var store = {
@@ -417,8 +441,11 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
     var b = el('button');
     b.type = 'button';
     b.setAttribute('aria-pressed', 'false');
+    /* "UK" sits on its own line visually; the label keeps the space so the
+       accessible name reads "UK 14", not "UK14". */
+    b.setAttribute('aria-label', 'UK ' + n);
     b.appendChild(el('span', 'uk', 'UK'));
-    b.appendChild(document.createTextNode(String(n)));
+    b.appendChild(document.createTextNode(' ' + String(n)));
     b.addEventListener('click', function () { setSize(n); });
     elSizes.appendChild(b);
     sizeButtons.push(b);
@@ -431,6 +458,26 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
     }
     store.set('vsd-size', String(n));
     render();
+    revealResult();
+  }
+
+  /* Bring the answer into view after a tap, but only when it is not already
+     there — no yanking a page the reader can already see. A result taller
+     than the viewport counts as visible once its top edge is on screen. */
+  function revealResult() {
+    if (!elResult.getBoundingClientRect || !elResult.scrollIntoView) return;
+    var r = elResult.getBoundingClientRect();
+    var vh = window.innerHeight || document.documentElement.clientHeight || 0;
+    if (r.top >= 0 && (r.bottom <= vh || r.height >= vh)) return;
+    var reduce = false;
+    try {
+      reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    } catch (e) { reduce = false; }
+    try {
+      elResult.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' });
+    } catch (e) {
+      elResult.scrollIntoView();
+    }
   }
 
   function setMode(m) {
@@ -454,8 +501,7 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
     /* 1. the answer */
     var a = el('p', 'answer');
     a.appendChild(document.createTextNode('Vinted’s Nov 2025 system puts UK ' + n + ' in '));
-    a.appendChild(el('span', 'big', full(b)));
-    a.appendChild(document.createTextNode('.'));
+    a.appendChild(endWithStop(full(b)));
     out.appendChild(a);
 
     /* 2. the letter-shift warning, where the letters actually moved */
@@ -475,12 +521,15 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
     /* 3. what to tick */
     var strat = el('div', 'block');
     strat.appendChild(el('h3', null, 'What to tick in the filter'));
+    strat.appendChild(el('p', 'note precheck',
+      'If your filters show single sizes or old-style letter/number labels instead of ranges, this bucket strategy does not apply to you — filter by your number as before.'
+    ));
     var ul = el('ul', 'ticks');
 
     var li1 = el('li', 'primary');
     li1.appendChild(el('span', 'box', b.key));
     li1.appendChild(document.createTextNode(b.range));
-    var w1 = el('span', 'why', 'Your bucket. It will also show you the other size in it, and there is no way to stop that.');
+    var w1 = el('span', 'why', 'Your bucket. It will also show you the other size in it, and on that layout there’s no way to stop that.');
     li1.appendChild(w1);
     ul.appendChild(li1);
 
@@ -491,15 +540,15 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
       li2.appendChild(el('span', 'why',
         'UK ' + n + ' sits at the ' + (atBottom ? 'bottom' : 'top') + ' of ' + b.key + ', so it is the size that gets pushed ' +
         (atBottom ? 'down into ' + neighbour.key : 'up into ' + neighbour.key) +
-        '. Auto-converted listings are often out by one bucket, and sellers with an in-between garment guess.'
+        '. Users report auto-converted listings landing in the wrong bucket, and sellers with an in-between garment guess.'
       ));
       ul.appendChild(li2);
     } else {
       var li2b = el('li');
       li2b.appendChild(el('span', 'box', '—'));
-      li2b.appendChild(document.createTextNode(atBottom ? 'nothing smaller is documented' : 'nothing larger is documented'));
+      li2b.appendChild(document.createTextNode(atBottom ? 'nothing smaller verified' : 'nothing larger verified'));
       li2b.appendChild(el('span', 'why',
-        b.key + ' is the ' + (atBottom ? 'smallest' : 'largest') + ' bucket we could verify. If your account shows more, tick that too — we could not corroborate it.'
+        b.key + ' is the ' + (atBottom ? 'smallest' : 'largest') + ' bucket we could verify, so if your account offers one beyond it, tick that too.'
       ));
       ul.appendChild(li2b);
     }
@@ -509,14 +558,14 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
       li3.appendChild(el('span', 'box', other.key));
       li3.appendChild(document.createTextNode(other.range + ' — optional'));
       li3.appendChild(el('span', 'why',
-        'Only if you have the patience. Mislabelling goes both ways, but this side throws up more misses than hits.'
+        'Only if you have the patience — mislabelling goes both ways, though expect more noise on this side.'
       ));
       ul.appendChild(li3);
     }
 
     strat.appendChild(ul);
     strat.appendChild(el('p', 'note',
-      'Ticking two buckets means more to scroll. That is the trade: Vinted no longer lets you filter to one number.'
+      'Ticking two buckets means more to scroll. That is the trade: on the bucket layout you can’t filter to one number.'
     ));
     out.appendChild(strat);
 
@@ -527,12 +576,11 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
       older.appendChild(el('p', null,
         'Listings from before Nov 2025 may show ' + old.label + ' for your size' +
         (old.uncertain ? ' (the XS end of the old system is the part we are least sure of).' : '.') +
-        ' Some accounts still see the old labels, or numbers, depending on which version of Vinted they are on — so if you see a number, believe the number.'
+        ' Some accounts may still be seeing old labels or numbers, depending on which version of Vinted they are on — so if you see a number, believe the number.'
       ));
     } else {
       older.appendChild(el('p', null,
-        'We could not verify an old-system letter label for UK ' + n + ' — the pre-Nov-2025 labels we can corroborate run from UK 6 to UK 16. ' +
-        'On older or reverted listings, look for the numeric size in the title or description, and ask if it is not there.'
+        'We could not verify an old-system letter for UK ' + n + ' (the pre-Nov-2025 labels we can corroborate run UK 6 to UK 16), so on older or reverted listings look for the number in the title or description and ask if it is not there.'
       ));
     }
     out.appendChild(older);
@@ -544,8 +592,7 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
 
     var a = el('p', 'answer');
     a.appendChild(document.createTextNode('List a UK ' + n + ' under '));
-    a.appendChild(el('span', 'big', full(b)));
-    a.appendChild(document.createTextNode('.'));
+    a.appendChild(endWithStop(full(b)));
     out.appendChild(a);
 
     var c = el('div', 'callout');
@@ -576,7 +623,7 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
     var snip = el('div', 'block');
     snip.appendChild(el('h3', null, 'Copy this into your description'));
     var text =
-      'UK ' + n + '. Listed under ' + b.key + ' (' + b.range + ') because that is all Vinted allows now.\n' +
+      'UK ' + n + '. Listed under ' + b.key + ' (' + b.range + ').\n' +
       'Measurements laid flat: pit to pit __cm, shoulder to hem __cm, waist __cm.\n' +
       'Fit: [true to size / runs small / runs large]. Happy to measure anything else — just ask.';
     var pre = el('pre', null, text);
@@ -586,6 +633,7 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
     btn.type = 'button';
     btn.addEventListener('click', function () { copy(text, btn); });
     snip.appendChild(btn);
+    snip.appendChild(el('p', 'note title-tip', 'And put “UK ' + n + '” in the listing title too.'));
     snip.appendChild(el('p', 'note', 'Fill in the blanks with a tape measure. The underscores are placeholders, not a style.'));
     out.appendChild(snip);
   }
@@ -632,7 +680,7 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
     }
     var b = bucketFor(size);
     if (!b) {
-      elResult.appendChild(el('p', 'placeholder', 'No documented bucket for UK ' + size + '.'));
+      elResult.appendChild(el('p', 'placeholder', 'No verified bucket for UK ' + size + '.'));
       return;
     }
     if (mode === 'buy') renderBuy(elResult, size, b);

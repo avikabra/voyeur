@@ -8,6 +8,14 @@ Format: **need** — why it's a gap · feasibility · evidence status
 
 ---
 
+## With live demand evidence (from 2026-08-09 pilot scout)
+
+- **Petite-friendly brand directory** — 6 Mumsnet threads across years rebuild the same brand list from scratch (Boden, Hobbs, Uniqlo XXS...); no canonical filterable resource exists. · Static curated directory with filters; the lift is data curation and keeping it honest about coverage. · *Evidence: mumsnet.com/talk/style_and_beauty/5535865, /5162311, /5024803, /4990977, /5295041, /4789233.*
+- **Wear-tracking / cost-per-wear without the paywall** — Indyx paywalls analytics (~$20 AUD/mo), Acloset caps free tier at 100 items with heavy ads and locked users out of their own catalogs (€30/mo); YouLookFab users still hand-roll spreadsheets. Differentiator: local-only (IndexedDB), no cap, no account, data exportable. · Trivial compute; the risk is manual-entry friction. · *Evidence: youlookfab.com/welookfab/topic/app-for-tracking-cost-per-wears (+3 sibling threads), justuseapp.com Indyx reviews, kimola.com Acloset report.*
+- **International size conversion (menswear suits/jackets)** — 4-5 Styleforum threads re-derive EU↔US conversion manually over years; conversions are disputed between sources ("2 schools of thought"), which a good tool would surface rather than hide. · Pure static lookup; must present the disagreement honestly. · *Evidence: styleforum.net threads 528800, 361698, 717209.*
+
+## From founding research (Aug 2026) — no live evidence yet
+
 1. **Cross-brand size/fit reconciliation** — "I'm a US 8 in J.Crew, what am I in Uniqlo?" True Fit and MySize solve this but are B2B-only, licensed to retailers, never sold to shoppers. Largest identified gap. · Pure logic over a curated static size-chart JSON, no ML; the entire lift is data curation quality and honest confidence signaling. · *From founding research, needs fresh demand evidence.*
 
 2. **Discontinued-item / dupe finder** — no unified tool exists; people do this by hand with RN numbers, style codes, and Wayback on dead product pages. · CLIP-embedding similarity over a curated index, in-browser ONNX; the index is the hard part. · *From founding research, needs fresh demand evidence.*

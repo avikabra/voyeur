@@ -32,7 +32,13 @@ These docs are principles, not scripts. They give you load-bearing facts and lea
 
 ## Status
 
-**Design phase.** Zero apps shipped. The docs are written, the state files are seeded, the pipeline is specified. The scheduled trigger is **not yet armed** — it fires only after a first supervised pilot run proves the loop end to end. See [docs/OPERATIONS.md](docs/OPERATIONS.md).
+**Live.** The catalog is at **https://avikabra.github.io/voyeur/** and the first app —
+[Size Decoder for Vinted](https://avikabra.github.io/voyeur/apps/vinted-size-decoder/app/) —
+shipped 2026-08-09 after a full pilot cycle: scouted from live demand (9 Mumsnet threads),
+researched, built, put through an adversarial loop (code review, hostile-input breaker,
+five simulated first-time users; one blocker and a dozen fixes), and deploy-verified.
+The 4-hour autonomous cycle is armed. See [docs/OPERATIONS.md](docs/OPERATIONS.md) and
+[pipeline/state/runs/](pipeline/state/runs/).
 
 ## License
 

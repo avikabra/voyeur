@@ -10,4 +10,16 @@ Format: **idea** — *rejected YYYY-MM-DD* — reason · what would change this
 
 ---
 
-*Empty. No cycles have run yet.*
+**Luxury-bag / designer-item authentication tool** — *rejected 2026-08-09* — Strong recurring pain
+(years of PurseForum threads distrusting both cheap services and established apps like LegitApp,
+which misjudged a fake and refused a refund). But reliable authentication requires expert visual
+judgment or serious trained models; a zero-cost client-side app would be exactly the unreliable
+tool users already complain about, and a wrong "authentic" verdict causes real financial harm.
+· What would change this: a genuinely reliable open model for authentication verification —
+unlikely; treat this rejection as near-permanent.
+
+**Resale marketplace price/payout tools** — *rejected 2026-08-09* — Complaints are about platform
+economics (ThredUp payouts, Depop filters), not a missing tool; a real comp-pricing tool needs
+live marketplace data (ongoing scraping infra, ToS-sensitive, breaks silently). Adjacent seller
+tools (Closo, VintHelper, Nifty) already crowd the space. · What would change this: an official
+free marketplace API with historical pricing.
