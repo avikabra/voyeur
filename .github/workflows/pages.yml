@@ -1,21 +1,26 @@
 name: Deploy catalog to GitHub Pages
 
+# Pages is enabled in deploy-from-branch mode, serving the gh-pages branch.
+# (The GITHUB_TOKEN cannot create a Pages site via actions/configure-pages —
+# "Resource not accessible by integration" — so the site was provisioned by
+# pushing a gh-pages branch, which GitHub auto-enables. This workflow keeps
+# that branch in sync with main. Sessions may also force-push gh-pages
+# directly; both paths are equivalent.)
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,19 +32,15 @@ jobs:
         env:
           SITE_URL: https://avikabra.github.io/voyeur
           BASE_PATH: /voyeur
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish to gh-pages branch
+        run: |
+          cd site/dist
+          touch .nojekyll
+          git init -b gh-pages
+          git config user.name "voyeur-pipeline"
+          git config user.email "noreply@anthropic.com"
+          git add -A
+          git commit -m "Pages deploy: built from ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages:gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
