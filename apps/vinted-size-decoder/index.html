@@ -539,8 +539,7 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
     var c = el('div', 'callout');
     c.appendChild(el('strong', null, 'The bucket is not enough. '));
     c.appendChild(document.createTextNode(
-      'A buyer filtering ' + b.key + ' sees every UK ' + b.lo + ' and ' + b.hi +
-      ', so put the number in the listing.'
+      'Someone filtering ' + b.key + ' sees every UK ' + b.lo + ' and ' + b.hi + ' — give them the number.'
     ));
     out.appendChild(c);
 
@@ -550,13 +549,13 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
     var items = [
       '“UK ' + n + '” in the title — it is searchable.',
       'Pit to pit, shoulder to hem and waist, laid flat in cm.',
-      'A photo of the size tag, and a note if it runs small or large.'
+      'A photo of the size tag; say if it runs small or large.'
     ];
     items.forEach(function (t) { ul.appendChild(el('li', null, t)); });
     howto.appendChild(ul);
     if (old) {
       howto.appendChild(el('p', 'note',
-        'Before Nov 2025 this size was labelled ' + old.label + '; some buyers still search that.'
+        'Old label, pre-Nov 2025: ' + old.label + ' — some buyers still search it.'
       ));
     }
     out.appendChild(howto);
