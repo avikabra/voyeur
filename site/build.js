@@ -55,6 +55,17 @@ const STATUSES = {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+// Favicon: the same accent tile + white V as the header mark, inlined as a
+// data URI. No favicon.ico request, no external asset anywhere on the site.
+const FAVICON =
+  'data:image/svg+xml,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">' +
+      '<rect width="32" height="32" rx="7.5" fill="#1550d0"/>' +
+      '<path d="M7 8.5h5.3L16 19.3 19.7 8.5H25l-6.6 15h-4.8z" fill="#fff"/>' +
+      '</svg>'
+  );
+
 const warnings = [];
 function warn(msg) {
   warnings.push(msg);
@@ -125,6 +136,26 @@ function stringArray(v) {
   return v.filter(isNonEmptyString).map((s) => s.trim());
 }
 
+/**
+ * A stable accent hue per app, derived from its slug (FNV-1a). Kept inside
+ * 200-349deg — blues through violets to magenta — so every tile stays in the
+ * same family as the house accent and no app draws a muddy olive.
+ */
+function hueFor(seed) {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return 200 + ((h >>> 0) % 150);
+}
+
+/** First letter for the tile mark. Falls back to the accent V. */
+function initialOf(name) {
+  const m = /[A-Za-z0-9]/.exec(name || '');
+  return m ? m[0].toUpperCase() : 'V';
+}
+
 // ---------------------------------------------------------------------------
 // Manifest loading + validation
 // ---------------------------------------------------------------------------
@@ -193,6 +224,55 @@ function loadManifests() {
   });
 
   return apps;
+}
+
+/**
+ * site/coming.json — the builds the pipeline has already committed to, rendered
+ * as muted "In the works" tiles. Optional by design: no file means no tiles and
+ * no warning, so a clone without it still builds a clean catalog. A file that
+ * exists but is broken does warn, because that is a mistake, not a choice.
+ *
+ * Shape: [{ "title": "...", "need": "one line" }]
+ */
+function loadComing() {
+  const file = path.join(SITE_DIR, 'coming.json');
+  if (!fs.existsSync(file)) return [];
+
+  let raw;
+  try {
+    raw = fs.readFileSync(file, 'utf8');
+  } catch (err) {
+    warn('site/coming.json is unreadable (' + err.message + ') — no "In the works" tiles');
+    return [];
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    warn('site/coming.json is not valid JSON (' + err.message + ') — no "In the works" tiles');
+    return [];
+  }
+
+  if (!Array.isArray(parsed)) {
+    warn('site/coming.json is not a JSON array — no "In the works" tiles');
+    return [];
+  }
+
+  const out = [];
+  parsed.forEach((entry, i) => {
+    const where = 'site/coming.json entry ' + (i + 1);
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      warn(where + ' is not an object — skipped');
+      return;
+    }
+    if (!isNonEmptyString(entry.title) || !isNonEmptyString(entry.need)) {
+      warn(where + ' needs both "title" and "need" — skipped');
+      return;
+    }
+    out.push({ title: entry.title.trim(), need: entry.need.trim() });
+  });
+  return out;
 }
 
 /**
@@ -290,17 +370,20 @@ function normalize(m, dirName) {
 const CSS = `
 *,*::before,*::after{box-sizing:border-box}
 :root{
-  --bg:#f7f7f8;
+  --bg:#f4f5f8;
   --card:#ffffff;
-  --ink:#15171c;
-  --ink-soft:#3d434b;
-  --muted:#6c727c;
-  --line:#e3e5ea;
-  --line-strong:#cdd1d8;
+  --ink:#14161b;
+  --ink-soft:#454b56;
+  --muted:#646b76;
+  --line:#e4e6ec;
+  --line-strong:#c9cdd6;
   --accent:#1550d0;
   --accent-dark:#0f3ea3;
-  --accent-soft:#eaf0fd;
-  --accent-line:#c7d8fa;
+  --accent-soft:#eef3fd;
+  --accent-line:#c6d7f8;
+  /* per-app accent hue, set inline from the slug. 220 is the house blue. */
+  --h:220;
+  --r:14px;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
 }
@@ -313,107 +396,189 @@ body{
   font-size:16px;
   line-height:1.55;
   -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
   overflow-wrap:break-word;
   min-height:100vh;
   display:flex;
   flex-direction:column;
 }
 main{flex:1}
-.wrap{max-width:68rem;margin:0 auto;padding:0 1rem}
-.wrap.narrow{max-width:42rem}
+.wrap{width:100%;max-width:68rem;margin:0 auto;padding:0 1.15rem}
+.wrap.narrow{max-width:44rem}
+.page{padding-top:1.6rem;padding-bottom:2.75rem}
 a{color:var(--accent);text-underline-offset:.15em}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a:hover{color:var(--accent-dark)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:5px}
 img{max-width:100%;height:auto}
 
-/* header --------------------------------------------------------------- */
+/* header + hero -------------------------------------------------------- */
 .top{background:var(--card);border-bottom:1px solid var(--line)}
-.top .wrap{padding-top:1.15rem;padding-bottom:1.15rem}
-.wordmark{display:inline-block;font-size:1.15rem;font-weight:700;letter-spacing:.01em;color:var(--ink);text-decoration:none}
-.wordmark:hover{color:var(--accent)}
-.tagline{margin:.25rem 0 0;color:var(--muted);font-size:.9rem}
-.top nav{margin-top:.55rem;font-size:.85rem;color:var(--line-strong)}
-.top nav a{color:var(--muted);text-decoration:none}
-.top nav a:hover{color:var(--accent)}
-.top nav span{padding:0 .35rem}
+.top .wrap{padding-top:.85rem;padding-bottom:.85rem}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:.6rem 1rem;flex-wrap:wrap}
+.brand{margin:0;font-size:1.05rem;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.brand a{display:inline-flex;align-items:center;gap:.55rem;color:var(--ink);text-decoration:none}
+.brand a:hover{color:var(--accent)}
+.mark{
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:1.8rem;height:1.8rem;border-radius:.55rem;
+  font-size:.95rem;font-weight:800;letter-spacing:0;color:#fff;
+  background:linear-gradient(145deg,#2f6ae8,#1550d0 55%,#0e3a99);
+  box-shadow:0 1px 2px rgba(15,62,163,.35);
+}
+.nav{display:flex;align-items:center;gap:.1rem;font-size:.88rem}
+.nav a{color:var(--muted);text-decoration:none;padding:.2rem .4rem;border-radius:6px}
+.nav a:hover{color:var(--accent);background:var(--accent-soft)}
+.nav span{color:var(--line-strong)}
 
-main{padding:1.5rem 0 2.5rem}
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);
+  background:
+    radial-gradient(42rem 18rem at 6% -45%,hsla(220,86%,54%,.14),rgba(255,255,255,0) 68%),
+    linear-gradient(180deg,#ffffff 0%,#fafbfe 100%);
+}
+.hero::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(hsla(222,20%,44%,.20) 1px,rgba(0,0,0,0) 1px);
+  background-size:22px 22px;
+  -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,0) 74%);
+  mask-image:linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,0) 74%);
+}
+.hero .wrap{position:relative;z-index:1;padding-top:1.5rem;padding-bottom:1.7rem}
+.hero .brand{font-size:1.95rem;letter-spacing:-.035em}
+.hero .mark{width:2.5rem;height:2.5rem;border-radius:.78rem;font-size:1.3rem}
+.hero .lede{margin:1.05rem 0 0;max-width:32rem;font-size:1.02rem;line-height:1.45;color:var(--ink-soft)}
+.hero .stat{
+  margin:.75rem 0 0;display:flex;align-items:center;gap:.45rem;
+  font-size:.76rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+}
+.hero .stat .dot{width:.42rem;height:.42rem;border-radius:50%;background:#0f8a55;flex:none}
 
 /* tiles ---------------------------------------------------------------- */
-.grid{list-style:none;margin:0;padding:0;display:grid;gap:.75rem;grid-template-columns:repeat(auto-fill,minmax(15.5rem,1fr))}
-.tile{
-  position:relative;display:flex;flex-direction:column;gap:.45rem;
-  background:var(--card);border:1px solid var(--line);border-radius:10px;
-  padding:1rem;min-height:9rem;
+/* auto-fit so a short catalog fills its row instead of leaving an empty track,
+   and a width cap from the real tile count (--n) so one or two tiles don't
+   stretch into billboards. Above four tiles the cap exceeds the wrap and the
+   grid simply goes full width. */
+.grid{
+  --gap:1rem;--n:4;
+  list-style:none;margin:0;padding:0;display:grid;gap:var(--gap);
+  grid-template-columns:repeat(auto-fit,minmax(15.5rem,1fr));
+  max-width:calc(var(--n) * 24rem + (var(--n) - 1) * var(--gap));
 }
-.tile:hover{border-color:var(--accent-line);box-shadow:0 1px 3px rgba(20,23,28,.07)}
+.tile{
+  position:relative;display:flex;flex-direction:column;gap:.55rem;overflow:hidden;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:1.15rem 1.15rem 1rem;min-height:10.5rem;
+  box-shadow:0 1px 2px rgba(20,23,28,.05);
+  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
+}
+.tile::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,hsl(var(--h),68%,46%),hsl(var(--h),78%,63%));
+}
+.tile:hover{
+  transform:translateY(-2px);border-color:hsl(var(--h),45%,80%);
+  box-shadow:0 12px 24px -14px rgba(20,23,28,.35),0 2px 6px -3px rgba(20,23,28,.10);
+}
 .tile:focus-within{border-color:var(--accent)}
-.tile h2{margin:0;font-size:1rem;line-height:1.3;font-weight:600}
+.tile .head{display:flex;align-items:center;gap:.65rem}
+.tile-mark{
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:2.05rem;height:2.05rem;border-radius:.62rem;font-size:.92rem;font-weight:800;
+  background:hsl(var(--h),70%,95%);color:hsl(var(--h),62%,29%);border:1px solid hsl(var(--h),58%,85%);
+}
+.tile h2{margin:0;font-size:1.02rem;line-height:1.28;font-weight:700;letter-spacing:-.012em}
 .tile h2 a{color:var(--ink);text-decoration:none}
 /* the whole tile is the click target for the primary link */
-.tile h2 a::after{content:"";position:absolute;inset:0;border-radius:10px}
-.tile .need{margin:0;flex:1;color:var(--ink-soft);font-size:.9rem}
-.tile .foot{margin:0;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
+.tile h2 a::after{content:"";position:absolute;inset:0;border-radius:var(--r)}
+.tile:hover h2 a{color:hsl(var(--h),64%,32%)}
+.tile .need{margin:0;flex:1;color:var(--ink-soft);font-size:.9rem;line-height:1.5}
+.tile .foot{margin:.1rem 0 0;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
 .details{position:relative;z-index:1;font-size:.82rem;color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line-strong)}
 .details:hover{color:var(--accent);border-color:var(--accent)}
-.tile.muted{background:#f2f3f5;border-color:#dfe2e7}
+.tile.muted{background:#f0f1f4;border-color:#dfe2e7;box-shadow:none}
 .tile.muted h2 a{color:var(--ink-soft)}
 .tile.muted .need{color:var(--muted)}
+/* declared next builds: not links, and they must not look like one */
+.tile.soon{background:rgba(255,255,255,.45);border-style:dashed;border-color:var(--line-strong);box-shadow:none}
+.tile.soon::before{display:none}
+.tile.soon:hover{transform:none;box-shadow:none;border-color:var(--line-strong)}
+.tile.soon h2{color:var(--ink-soft);font-weight:600}
+.tile.soon .need{color:var(--muted)}
+.tile.soon .tile-mark{background:#e9ebef;color:#4f5561;border-color:#d6d9e0}
 
 .chip{
-  display:inline-block;font-size:.67rem;font-weight:700;letter-spacing:.07em;
-  text-transform:uppercase;padding:.15rem .45rem;border-radius:999px;
-  background:#eef0f3;color:var(--muted);border:1px solid var(--line);white-space:nowrap;
+  display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.07em;line-height:1.4;
+  text-transform:uppercase;padding:.18rem .5rem;border-radius:999px;
+  background:#eef0f3;color:#545b66;border:1px solid #e0e3e9;white-space:nowrap;
 }
-.chip.live{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line)}
+.chip.live{background:hsl(var(--h),72%,95%);color:hsl(var(--h),64%,28%);border-color:hsl(var(--h),58%,85%)}
+.chip.wip{background:#fff4e3;color:#855000;border-color:#f0dcba}
+.chip.broken{background:#fdecec;color:#a1232b;border-color:#f2cbcb}
+.chip.soon{background:#eceef2;color:#4f5561;border-color:#dbdee5}
 
 /* buttons -------------------------------------------------------------- */
 .btn{
   display:inline-block;background:var(--accent);color:#fff;text-decoration:none;
-  font-weight:600;font-size:.95rem;padding:.6rem 1.1rem;border-radius:8px;
+  font-weight:600;font-size:.95rem;padding:.62rem 1.15rem;border-radius:10px;
+  box-shadow:0 1px 2px rgba(15,62,163,.25);
 }
-.btn:hover{background:var(--accent-dark)}
-.btn.ghost{background:var(--card);color:var(--accent);border:1px solid var(--accent-line)}
-.btn.ghost:hover{background:var(--accent-soft)}
+.btn:hover{background:var(--accent-dark);color:#fff}
+.btn.ghost{background:var(--card);color:var(--accent);border:1px solid var(--accent-line);box-shadow:none}
+.btn.ghost:hover{background:var(--accent-soft);color:var(--accent-dark)}
 .hint{font-size:.88rem;color:var(--muted)}
 
 /* cards for text pages -------------------------------------------------- */
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1.25rem}
-.crumb{margin:0 0 .85rem;font-size:.85rem}
+.card{
+  position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r);padding:1.25rem;box-shadow:0 1px 2px rgba(20,23,28,.05);
+}
+.card.app::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,hsl(var(--h),68%,46%),hsl(var(--h),78%,63%));
+}
+.crumb{margin:0 0 .85rem;font-size:.86rem}
 .crumb a{color:var(--muted);text-decoration:none}
 .crumb a:hover{color:var(--accent)}
-h1{font-size:1.4rem;line-height:1.25;margin:0 0 .35rem;font-weight:700;letter-spacing:-.01em}
-.subtitle{margin:0 0 .9rem;color:var(--ink-soft)}
-.meta{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:0 0 1rem;font-size:.85rem;color:var(--muted)}
-.actions{margin:0 0 .35rem;display:flex;flex-wrap:wrap;gap:.6rem .9rem;align-items:center}
-section{margin:1.5rem 0 0}
-section h2{font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 .45rem;font-weight:700}
-section p{margin:0 0 .5rem;color:var(--ink-soft);font-size:.95rem}
+h1{font-size:1.5rem;line-height:1.2;margin:0 0 .4rem;font-weight:800;letter-spacing:-.022em}
+.subtitle{margin:0 0 1rem;color:var(--ink-soft);font-size:1rem;line-height:1.55}
+.subtitle + .subtitle{margin-top:-.5rem}
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:0 0 1.1rem;font-size:.86rem;color:var(--muted)}
+.actions{margin:0;display:flex;flex-wrap:wrap;gap:.6rem .9rem;align-items:center}
+section{margin:1.5rem 0 0;padding-top:1.35rem;border-top:1px solid var(--line)}
+section h2{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 .55rem;font-weight:700}
+section p{margin:0 0 .55rem;color:var(--ink-soft);font-size:.95rem;line-height:1.6}
 section p:last-child{margin-bottom:0}
-ul.list{margin:0;padding-left:1.15rem;color:var(--ink-soft);font-size:.93rem}
-ul.list li{margin:0 0 .35rem}
-ul.plain{list-style:none;margin:0;padding:0;font-size:.93rem}
-ul.plain li{margin:0 0 .4rem;color:var(--ink-soft)}
+ul.list{margin:0;padding-left:1.2rem;color:var(--ink-soft);font-size:.93rem;line-height:1.6}
+ul.list li{margin:0 0 .4rem}
+ul.list li:last-child{margin-bottom:0}
+ul.plain{list-style:none;margin:0;padding:0;font-size:.93rem;line-height:1.6}
+ul.plain li{margin:0 0 .45rem;color:var(--ink-soft)}
+ul.plain li:last-child{margin-bottom:0}
 ul.plain a{overflow-wrap:anywhere}
 ul.plain .note{color:var(--muted);font-size:.87rem}
 pre{
-  margin:0 0 .5rem;padding:.7rem .85rem;background:#f5f6f8;border:1px solid var(--line);
-  border-radius:8px;overflow-x:auto;font-family:var(--mono);font-size:.85rem;
-  line-height:1.5;color:var(--ink-soft);
+  margin:0 0 .55rem;padding:.75rem .9rem;background:#f5f6f8;border:1px solid var(--line);
+  border-radius:10px;overflow-x:auto;font-family:var(--mono);font-size:.85rem;
+  line-height:1.55;color:var(--ink-soft);
 }
-.dates{font-size:.85rem;color:var(--muted);margin:1.25rem 0 0}
+.dates{font-size:.84rem;color:var(--muted);margin:1.35rem 0 0}
 
 /* footer --------------------------------------------------------------- */
-footer{border-top:1px solid var(--line);background:var(--card);padding:1.1rem 0;font-size:.85rem;color:var(--muted)}
+footer{border-top:1px solid var(--line);background:var(--card);padding:1.15rem 0;font-size:.85rem;color:var(--muted)}
 footer p{margin:0}
 footer a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line-strong)}
 footer a:hover{color:var(--accent);border-color:var(--accent)}
 
 @media (min-width:48rem){
   body{font-size:17px}
-  .wrap{padding:0 1.5rem}
-  main{padding:2rem 0 3rem}
-  h1{font-size:1.65rem}
-  .card{padding:1.75rem}
+  .wrap{padding:0 1.75rem}
+  .page{padding-top:2.1rem;padding-bottom:3.25rem}
+  .hero .wrap{padding-top:2.35rem;padding-bottom:2.2rem}
+  .hero .brand{font-size:2.6rem}
+  .hero .mark{width:3.2rem;height:3.2rem;border-radius:.98rem;font-size:1.7rem}
+  .hero .lede{margin-top:1.15rem;font-size:1.1rem}
+  .grid{--gap:1.15rem}
+  h1{font-size:1.8rem}
+  .card{padding:1.85rem}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 `.trim();
@@ -422,9 +587,29 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
 // Layout
 // ---------------------------------------------------------------------------
 
+/**
+ * The brand mark: an accent tile with a white V. Same shape as the favicon, so
+ * the tab and the page agree. Pure CSS + one letter — no image request.
+ */
+function brandBlock(isHome) {
+  const tag = isHome ? 'h1' : 'p';
+  return (
+    `      <${tag} class="brand"><a href="${u('/')}">` +
+    `<span class="mark" aria-hidden="true">V</span>Voyeur</a></${tag}>`
+  );
+}
+
 function layout(opts) {
   const canonical = SITE_URL && opts.canonicalPath ? SITE_URL + opts.canonicalPath : '';
-  const wrapClass = opts.wide ? 'wrap' : 'wrap narrow';
+  const wrapClass = opts.wide ? 'wrap page' : 'wrap narrow page';
+  const hero = opts.hero || null;
+  const heroLines = hero
+    ? `    <p class="lede">${esc(TAGLINE)}</p>\n` +
+      (hero.stat
+        ? `    <p class="stat"><span class="dot" aria-hidden="true"></span>${esc(hero.stat)}</p>\n`
+        : '')
+    : '';
+
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -433,6 +618,8 @@ function layout(opts) {
 <title>${esc(opts.title)}</title>
 <meta name="description" content="${esc(opts.description)}">
 <meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="${FAVICON}">
 ${canonical ? `<link rel="canonical" href="${esc(canonical)}">\n` : ''}<meta property="og:title" content="${esc(opts.title)}">
 <meta property="og:description" content="${esc(opts.description)}">
 <meta property="og:type" content="website">
@@ -440,12 +627,13 @@ ${canonical ? `<link rel="canonical" href="${esc(canonical)}">\n` : ''}<meta pro
 <style>${CSS}</style>
 </head>
 <body>
-<header class="top">
+<header class="top${hero ? ' hero' : ''}">
   <div class="wrap">
-    <a class="wordmark" href="${u('/')}">Voyeur</a>
-    <p class="tagline">${esc(TAGLINE)}</p>
-    <nav><a href="${u('/about/')}">About</a><span>&middot;</span><a href="${REPO_URL}">GitHub</a></nav>
-  </div>
+    <div class="bar">
+${brandBlock(Boolean(hero))}
+      <nav class="nav"><a href="${u('/about/')}">About</a><span aria-hidden="true">&middot;</span><a href="${REPO_URL}">GitHub</a></nav>
+    </div>
+${heroLines}  </div>
 </header>
 <main>
   <div class="${wrapClass}">
@@ -488,8 +676,11 @@ function renderTile(app) {
   const muted = app.status === 'broken' || app.status === 'retired' ? ' muted' : '';
 
   const parts = [];
-  parts.push(`      <li class="tile${muted}">`);
-  parts.push(`        <h2><a href="${esc(href)}"${rel}>${esc(app.name)}</a></h2>`);
+  parts.push(`      <li class="tile${muted}" style="--h:${hueFor(app.slug)}">`);
+  parts.push('        <div class="head">');
+  parts.push(`          <span class="tile-mark" aria-hidden="true">${esc(initialOf(app.name))}</span>`);
+  parts.push(`          <h2><a href="${esc(href)}"${rel}>${esc(app.name)}</a></h2>`);
+  parts.push('        </div>');
   parts.push(`        <p class="need">${esc(app.need)}</p>`);
   parts.push('        <p class="foot">');
   parts.push('          ' + chip(app.status));
@@ -501,6 +692,23 @@ function renderTile(app) {
   return parts.join('\n');
 }
 
+/**
+ * An "In the works" tile: a build the pipeline has declared, not an app. It has
+ * no link at all — nothing here is clickable, because there is nothing to open.
+ */
+function renderComingTile(item) {
+  return [
+    '      <li class="tile soon">',
+    '        <div class="head">',
+    `          <span class="tile-mark" aria-hidden="true">${esc(initialOf(item.title))}</span>`,
+    `          <h2>${esc(item.title)}</h2>`,
+    '        </div>',
+    `        <p class="need">${esc(item.need)}</p>`,
+    '        <p class="foot"><span class="chip soon">In the works</span></p>',
+    '      </li>',
+  ].join('\n');
+}
+
 function emptyState() {
   return `    <div class="card">
       <p>No apps yet — the first ones are being built.</p>
@@ -508,16 +716,30 @@ function emptyState() {
     </div>`;
 }
 
+/**
+ * The one-line count under the tagline. Counts only what is really there; if
+ * there is nothing to count it says nothing.
+ */
+function statLine(apps, coming) {
+  const live = apps.filter((a) => a.status === 'live').length;
+  const building = apps.filter((a) => a.status === 'wip').length + coming.length;
+  const parts = [];
+  if (live > 0) parts.push(live + ' live tool' + (live === 1 ? '' : 's'));
+  if (building > 0) parts.push(building + ' in build');
+  return parts.join(' · ');
+}
+
 // ---------------------------------------------------------------------------
 // Pages
 // ---------------------------------------------------------------------------
 
-function renderIndex(apps) {
+function renderIndex(apps, coming) {
+  const tiles = apps.map(renderTile).concat(coming.map(renderComingTile));
   const body =
-    apps.length === 0
+    tiles.length === 0
       ? emptyState()
-      : `    <ul class="grid">
-${apps.map(renderTile).join('\n')}
+      : `    <ul class="grid" style="--n:${Math.min(tiles.length, 4)}">
+${tiles.join('\n')}
     </ul>`;
 
   return layout({
@@ -525,7 +747,8 @@ ${apps.map(renderTile).join('\n')}
     description:
       'A catalog of small, free fashion tools. Built autonomously. No accounts, no fees.',
     canonicalPath: '/',
-    wide: apps.length > 0, // a one-line empty state doesn't need the full grid width
+    wide: tiles.length > 0, // a one-line empty state doesn't need the full grid width
+    hero: { stat: statLine(apps, coming) },
     body: body,
   });
 }
@@ -538,7 +761,7 @@ function renderAppPage(app) {
 
   const parts = [];
   parts.push(`    <p class="crumb"><a href="${u('/')}">&larr; All apps</a></p>`);
-  parts.push('    <article class="card">');
+  parts.push(`    <article class="card app" style="--h:${hueFor(app.slug)}">`);
   parts.push(`      <h1>${esc(app.name)}</h1>`);
   parts.push(`      <p class="subtitle">${esc(app.need)}</p>`);
   parts.push('      <p class="meta">' + chip(app.status) + (meta.note ? ` <span>${esc(meta.note)}</span>` : '') + '</p>');
@@ -691,13 +914,14 @@ function build() {
   console.log('  output:     ' + OUT_DIR);
 
   const apps = loadManifests();
+  const coming = loadComing();
 
   // Fresh dist every time — a stale page for a deleted app is a dead link.
   fs.rmSync(OUT_DIR, { recursive: true, force: true });
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
   const written = [];
-  written.push(writeFile('index.html', renderIndex(apps)));
+  written.push(writeFile('index.html', renderIndex(apps, coming)));
   written.push(writeFile('about/index.html', renderAbout()));
   written.push(writeFile('404.html', render404()));
 
@@ -726,6 +950,7 @@ function build() {
 
   console.log('');
   console.log('  apps:       ' + apps.length + (statusLine ? ' (' + statusLine + ')' : ' — empty catalog'));
+  console.log('  in works:   ' + coming.length);
   console.log('  pages:      ' + written.length);
   console.log('  warnings:   ' + warnings.length);
   if (!SITE_URL) console.log('  note:       SITE_URL unset — no canonical links or sitemap.xml');
