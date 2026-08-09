@@ -71,32 +71,43 @@ If a run's failure was caused by something in these docs being wrong or stale, f
 
 ## Deployment stewardship
 
-Hosting is **GitHub Pages** (see ARCHITECTURE for the model and for why Vercel is currently
-blocked). Practical rules:
+Hosting is **Vercel, single project `voyeur-catalog`** (see ARCHITECTURE). How to ship:
 
-- Ship = push to `main` (workflow republishes `gh-pages`) or force-push `gh-pages` directly.
-  Verify every ship via the Actions API: the "pages build and deployment" run must be green.
-  Content can be double-checked at `raw.githubusercontent.com/avikabra/voyeur/gh-pages/...`,
-  which IS reachable from the sandbox even though `github.io` is egress-blocked.
-- Keep the whole site light (soft limits ~1GB / ~100GB-month). No huge model files without
-  thinking about what they do to every other app's bandwidth.
-- Two orphaned Vercel projects (`voyeur-catalog`, `voyeur-catalog-site`) were created during the
-  pilot's failed Vercel attempt; sessions cannot delete them — the owner should.
+1. Land the work on `main` (always — main is the source of truth the deploy builds from).
+2. Redeploy the project: Vercel MCP `deploy_to_vercel`, name `voyeur-catalog`, target
+   production, team `team_99o6NaUqvOvYariYDv2ZyFIc` — re-send the same three tiny shell files
+   (package.json, build-from-repo.sh, README.md — they live unchanged in the project; copy them
+   from a previous deployment or ARCHITECTURE's description). The build clones main and runs
+   `site/build.js`.
+3. Verify: `get_deployment` must reach READY, then fetch the production URL
+   (https://voyeur-catalog.vercel.app) via `web_fetch_vercel_url` and confirm the new content.
+
+**If the session has no Vercel MCP tools** (scheduled sessions may not): still land everything
+on main, write "deploy pending" in the run log, and finish. A connector-holding session (or the
+owner opening the session interactively) redeploys later. Never let a missing deploy tool stop
+the build work. The clean long-term fix is the owner connecting the GitHub repo to the
+`voyeur-catalog` project in the Vercel dashboard (Project → Settings → Git) — then every push
+to main auto-deploys and this whole section reduces to "push main."
+
+Keep the site light — bandwidth ceilings are account-wide on the free tier. The owner asked
+that only ONE Vercel project be used: `voyeur-catalog-site` is unused and should be deleted by
+the owner from the dashboard.
 
 ## Armed — 2026-08-09
 
 The pilot ran on 2026-08-09 (see `pipeline/state/runs/2026-08-09-0530-pilot.md`): catalog built
 and live, first app (vinted-size-decoder) scouted from live demand, built, adversarially tested
 (three independent agents; one honesty blocker and ~12 fixes caught and applied), shipped, and
-deploy-verified. The Routine is armed: trigger `trig_012dmPyj4AmbtV34xdaQze6F`, cron
-`56 */4 * * *` UTC (every 4 hours), **fresh session per firing**, bootstrap prompt as above.
+deploy-verified. The Routine is armed: trigger `trig_01QuKfVRrGznaf1bRtvnPmUC`, cron
+`4 */4 * * *` UTC (every 4 hours), **fresh session per firing**, bootstrap prompt as above.
 Owner decision on record: **no notifications** — not on ship, not on failure. The catalog and
 git history are the record.
 
-Scheduled sessions run WITHOUT MCP connectors (no GitHub MCP, no Vercel MCP) — plain git, Bash,
-WebSearch/WebFetch, and file tools only. That is enough: git push works, and deploy verification
-uses `api.github.com` (reachable, 200 — Actions runs and Pages status via curl) plus
-`raw.githubusercontent.com` for published content.
+Scheduled sessions run WITHOUT MCP connectors (confirmed: the org cannot attach connectors to
+triggers) — plain git, Bash, WebSearch/WebFetch, and file tools only. Git push works;
+`api.github.com` and `raw.githubusercontent.com` are reachable for verification. Vercel deploys
+need connector tools, so connector-less sessions land work on main and mark "deploy pending"
+per Deployment stewardship above.
 
 Hard-won facts every scheduled session should know (all discovered the expensive way in the pilot):
 

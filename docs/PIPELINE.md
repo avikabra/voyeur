@@ -28,13 +28,21 @@ Read the *replies*, not just the wish. "Does this exist?" answered with "yeah, u
 
 First, **dedupe against state**: `shipped.md` (built it), `rejected.md` (considered and declined — *read the reasoning before overriding it*, and if you do override, say why), `backlog.md` (known, unbuilt). Re-litigating a settled rejection wastes a whole cycle.
 
-Then weigh three things together:
+Then weigh four things together:
 
-- **Demand.** How many independent people, over what span, how specific. Repetition beats intensity.
-- **Feasibility.** Can one session build this, completely, today? The honest question is not "could this be built" but "will the thing I ship in four hours actually solve their problem."
-- **Zero-cost fit.** Does it survive the five tests in VISION? Any paid dependency, any per-user cost, any signup requirement is disqualifying — not a design challenge.
+- **Breadth.** How large and global is the audience? A problem shared by shoppers everywhere
+  outranks a single community's workaround, even with weaker thread evidence — big shared
+  problems generate demand signal everywhere and don't need a perfect citation trail.
+- **Demand.** How many independent people, over what span. Repetition beats intensity.
+- **Feasibility.** Can the pipeline build this completely — across several sessions if needed?
+  Multi-session ambitious builds (wip handoff) are the expected shape for the big targets, not
+  an exception. "One quick session" is no longer the bar.
+- **Zero-cost fit.** Does it survive the six tests in VISION? Any paid dependency, any per-user
+  cost, any signup requirement is disqualifying — not a design challenge.
 
-Multiply, don't average. A zero on any axis is a zero overall.
+Multiply, don't average. A zero on any axis is a zero overall — but remember the owner's
+standing direction: aim at the big shared problems (try-on, discontinued-item search, sizing at
+scale), not small one-offs a chat reply could handle.
 
 **Zero is a valid answer.** If nothing clears the bar, record why in the run log, add the near-misses to `backlog.md` with their evidence, and spend the run on maintenance or on deepening research for next time. Do not build the fifth-best idea because a run felt obligated to produce something.
 

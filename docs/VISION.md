@@ -37,15 +37,31 @@ The local path matters more than it looks. It's the honesty guarantee: if the ap
 
 ## What makes an app belong here
 
-Five tests. An idea has to pass all five.
+Six tests. An idea has to pass all six. (Owner redirection, 2026-08-09: the first draft of
+these tests optimized for small and niche. That was wrong. Aim big.)
 
-1. **Small.** Scoped so one session *could* build it. If it needs a roadmap, it's a product company, not a Voyeur app. Scope down until it fits, or drop it. (In practice a build sometimes spans sessions via the partial-progress handoff in PIPELINE — that's fine; the test is about scope, not the clock.)
-2. **Complete.** "Simplest" is not "minimal." The simplest *complete* implementation solves the whole problem the person actually has, using the best available technique. A half-answer is worse than nothing because it burns the user's trust and the catalog's.
-3. **Zero-cost to operate.** No paid APIs, no metered inference, no database bills, no key that expires. Costs must not scale with users, because we cannot pay them and we will not rate-limit users to avoid paying them.
-4. **No signup.** No accounts, no email capture, no onboarding wall. State lives in the browser (localStorage / IndexedDB) or in a URL you can bookmark and share.
-5. **Actually wanted.** Backed by evidence that real people asked for this, repeatedly, in public. Not a clever idea we liked.
+1. **Broadly useful.** A problem shared by shoppers everywhere — across countries, platforms,
+   and communities — not one forum's workaround. The north-star examples, named by the owner:
+   **virtual try-on** and **discontinued-item search**. If the audience is "a specific corner of
+   one site," it's backlog material at best.
+2. **More than a chat answer.** If one ChatGPT reply could solve it, don't build it. The app
+   must do what a chat reply can't: interactive computation, image processing, search over an
+   index, persistent local data, a visual result.
+3. **Ambitious but shippable.** Build the hardest version the pipeline can actually complete —
+   and a build that spans several sessions via the partial-progress handoff in PIPELINE is
+   normal, not a failure. Scope down only when the constraint forces it, and say so honestly.
+4. **Complete.** "Simplest" is not "minimal." The simplest *complete* implementation solves the
+   whole problem using the best available technique. A half-answer burns trust.
+5. **Zero-cost to operate.** No paid APIs, no metered inference, no keys that expire. Free-tier
+   serverless (within the catalog's Vercel project) is allowed where client-side genuinely can't
+   do the job — but costs must never scale with users, and users are never rate-limited.
+6. **No signup.** No accounts, no email capture. State lives in the browser or the URL.
 
-An app that fails #3 is not a smaller app — it's a different project. Photorealistic virtual try-on is the standing example: the open-source models exist and are good, and every one of them needs a GPU. It's out of scope until that changes, no matter how much demand there is for it.
+On virtual try-on specifically: GPU-hosted photorealism is still out (it breaks #5), but that is
+a constraint to engineer around, not a reason to skip the category. Browser-runnable models
+(WebGPU, onnxruntime-web), pose-guided compositing, and the model landscape change fast —
+re-scout what's possible every cycle and build the best try-on that runs free. A working
+constrained try-on beats a perfect one that can't exist here.
 
 ## What success looks like
 
@@ -61,6 +77,9 @@ Second-order, in rough priority:
 Worth naming so it can be recognized early:
 
 - **Filler.** A shelf of twelve color-analysis clones because they were easy. Shipping nothing beats shipping filler — the catalog's value is the hit rate, not the count.
+- **Triviality.** One-off lookup tools that a single chat reply replaces, serving a niche
+  audience. The pilot's first app skirted this line (owner feedback, 2026-08-09); aim at the
+  big shared problems instead.
 - **Rot.** Twenty apps, eight of them broken, nobody checking. Maintenance is part of every cycle, not a someday task.
 - **Dishonesty.** An app that claims to estimate your measurements to the centimeter and is off by four. Overstatement is the fastest way to make the whole catalog worthless.
 - **Drift.** Apps that quietly need a key, an account, a paid tier. The zero-cost invariant is load-bearing for the entire premise.

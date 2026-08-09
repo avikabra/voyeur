@@ -84,25 +84,28 @@ Legitimate reasons for a serverless function: a third-party API that forbids bro
 
 ## Deployment model
 
-**GitHub Pages, one static site for everything** (decided 2026-08-09 during the pilot, superseding
-the original Vercel plan — see below for why):
+**Vercel, one project for everything: `voyeur-catalog`** (owner decision 2026-08-09, superseding
+a brief GitHub Pages interlude — the owner explicitly rejected static-only as an unnecessary
+limitation):
 
-- The whole library lives at **https://avikabra.github.io/voyeur/** — the catalog at the root,
-  each app served verbatim at `/apps/<slug>/app/`, its catalog page beside it at `/apps/<slug>/`.
-- `site/build.js` builds everything (`SITE_URL=https://avikabra.github.io/voyeur BASE_PATH=/voyeur`),
-  and the result is published by force-pushing `site/dist` to the **`gh-pages` branch**, which Pages
-  serves. Two equivalent paths: push to `main` and let `.github/workflows/pages.yml` do it, or
-  build locally and force-push `gh-pages` yourself. Verify ships via the GitHub Actions API — the
-  auto "pages build and deployment" run must succeed.
-- Failure isolation comes from the build script, not project separation: a malformed app or
-  manifest is skipped with a warning, never sinking the catalog.
-- Pages is free with soft limits (~1GB site, ~100GB/month bandwidth) — keep assets lean.
-
-**Why not Vercel** (as of Aug 2026 — re-check if the owner changes connector settings): the
-claude.ai Vercel connector is project-scoped to the owner's pre-existing projects. It can
-sometimes create a new project's deployment but can never read, verify, or manage it — and an
-unverifiable deploy is treated as a failed deploy. If the owner grants the connector full project
-access, Vercel per-app projects become viable again; until then, don't attempt it.
+- The library lives at **https://voyeur-catalog.vercel.app** — catalog at the root, each app
+  served at `/apps/<slug>/app/`, its catalog page beside it at `/apps/<slug>/`.
+- The Vercel project builds by **cloning this repo's main branch**: its build command runs
+  `site/build.js` (BASE_PATH empty, SITE_URL=https://voyeur-catalog.vercel.app) and serves the
+  output. So a redeploy always publishes current main — deploy = push to main + trigger a
+  redeploy of the project (Vercel MCP `deploy_to_vercel` with name `voyeur-catalog`, team
+  `team_99o6NaUqvOvYariYDv2ZyFIc`, re-sending the same tiny shell files; see OPERATIONS for
+  the connector-availability caveat and fallbacks).
+- **Serverless is allowed** where client-side genuinely can't do the job: functions live in the
+  same single project (namespace routes per app, e.g. `/api/<slug>/…`). The connector can only
+  manage THIS project — do not create per-app Vercel projects. Functions must use no keys, no
+  paid APIs, be cacheable where possible, and degrade gracefully. Client-side remains the
+  default because it's the only thing that costs zero at any scale.
+- Free (hobby) tier ceilings apply account-wide (bandwidth, function invocations/duration —
+  verify current numbers before leaning on them). Never upgrade a tier; never rate-limit users.
+- Failure isolation comes from the build script: a malformed app or manifest is skipped with a
+  warning, never sinking the catalog.
+- The GitHub Pages deployment (avikabra.github.io/voyeur) is retired; gh-pages branch deleted.
 
 ## Tech freedom
 
