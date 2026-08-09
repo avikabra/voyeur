@@ -39,7 +39,7 @@ The local path matters more than it looks. It's the honesty guarantee: if the ap
 
 Five tests. An idea has to pass all five.
 
-1. **Small.** One session builds it. If it needs a roadmap, it's a product company, not a Voyeur app. Scope down until it fits, or drop it.
+1. **Small.** Scoped so one session *could* build it. If it needs a roadmap, it's a product company, not a Voyeur app. Scope down until it fits, or drop it. (In practice a build sometimes spans sessions via the partial-progress handoff in PIPELINE — that's fine; the test is about scope, not the clock.)
 2. **Complete.** "Simplest" is not "minimal." The simplest *complete* implementation solves the whole problem the person actually has, using the best available technique. A half-answer is worse than nothing because it burns the user's trust and the catalog's.
 3. **Zero-cost to operate.** No paid APIs, no metered inference, no database bills, no key that expires. Costs must not scale with users, because we cannot pay them and we will not rate-limit users to avoid paying them.
 4. **No signup.** No accounts, no email capture, no onboarding wall. State lives in the browser (localStorage / IndexedDB) or in a URL you can bookmark and share.
