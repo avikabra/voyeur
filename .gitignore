@@ -1,0 +1,15 @@
+# Generated catalog output — rebuilt by `node site/build.js`
+site/dist/
+
+# Node
+node_modules/
+npm-debug.log*
+.npm/
+
+# Vercel
+.vercel/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp

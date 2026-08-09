@@ -1,0 +1,8 @@
+{
+  "slug": "_test-retired",
+  "name": "Old Thing",
+  "need": "Something nobody needs any more.",
+  "limitations": ["It was never very good."],
+  "status": "retired",
+  "created": "2026-07-30"
+}

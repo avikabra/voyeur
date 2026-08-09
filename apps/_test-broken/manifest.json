@@ -1,0 +1,14 @@
+{
+  "slug": "_test-broken",
+  "name": "Discontinued Finder",
+  "need": "Find where a discontinued piece is still in stock.",
+  "description": "Searches public resale and outlet listings for a garment that has been pulled from the brand's own site.",
+  "limitations": ["Only searches listings that are public and indexable.", "Stock data is as fresh as the last page it read."],
+  "evidence": ["https://example.com/thread — repeated ask, no tool named"],
+  "status": "broken",
+  "liveUrl": "https://voyeur-discontinued-finder.vercel.app",
+  "created": "2026-08-05",
+  "updated": "2026-08-07",
+  "tech": ["static"],
+  "localRun": "npx serve apps/discontinued-finder"
+}
