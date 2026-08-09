@@ -88,9 +88,15 @@ blocked). Practical rules:
 The pilot ran on 2026-08-09 (see `pipeline/state/runs/2026-08-09-0530-pilot.md`): catalog built
 and live, first app (vinted-size-decoder) scouted from live demand, built, adversarially tested
 (three independent agents; one honesty blocker and ~12 fixes caught and applied), shipped, and
-deploy-verified. The Routine is armed: **every 4 hours, fresh session per firing**, bootstrap
-prompt as above. Owner decision on record: **no notifications** — not on ship, not on failure.
-The catalog and git history are the record.
+deploy-verified. The Routine is armed: trigger `trig_012dmPyj4AmbtV34xdaQze6F`, cron
+`56 */4 * * *` UTC (every 4 hours), **fresh session per firing**, bootstrap prompt as above.
+Owner decision on record: **no notifications** — not on ship, not on failure. The catalog and
+git history are the record.
+
+Scheduled sessions run WITHOUT MCP connectors (no GitHub MCP, no Vercel MCP) — plain git, Bash,
+WebSearch/WebFetch, and file tools only. That is enough: git push works, and deploy verification
+uses `api.github.com` (reachable, 200 — Actions runs and Pages status via curl) plus
+`raw.githubusercontent.com` for published content.
 
 Hard-won facts every scheduled session should know (all discovered the expensive way in the pilot):
 
