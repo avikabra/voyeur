@@ -35,7 +35,6 @@ const OUT_DIR = path.join(SITE_DIR, 'dist');
 
 const REPO_URL = 'https://github.com/avikabra/voyeur';
 const REPO_TREE = REPO_URL + '/tree/main';
-const TAGLINE = 'Free fashion tools, built autonomously. No accounts, no fees.';
 
 const STRICT = process.argv.includes('--strict');
 const SITE_URL = (process.env.SITE_URL || '').replace(/\/+$/, '');
@@ -55,14 +54,14 @@ const STATUSES = {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-// Favicon: the same accent tile + white V as the header mark, inlined as a
+// Favicon: a stylized serif-italic V matching the wordmark, inlined as a
 // data URI. No favicon.ico request, no external asset anywhere on the site.
 const FAVICON =
   'data:image/svg+xml,' +
   encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">' +
-      '<rect width="32" height="32" rx="7.5" fill="#1550d0"/>' +
-      '<path d="M7 8.5h5.3L16 19.3 19.7 8.5H25l-6.6 15h-4.8z" fill="#fff"/>' +
+      '<rect width="32" height="32" rx="6" fill="#faf9f7"/>' +
+      '<text x="16" y="24" text-anchor="middle" font-family="Georgia, \'Times New Roman\', serif" font-style="italic" font-weight="700" font-size="24" fill="#15171c">V</text>' +
       '</svg>'
   );
 
@@ -385,6 +384,7 @@ const CSS = `
   --h:220;
   --r:14px;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --serif:ui-serif,Georgia,"Iowan Old Style","Times New Roman",Times,serif;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
 }
 html{-webkit-text-size-adjust:100%}
@@ -415,16 +415,9 @@ img{max-width:100%;height:auto}
 .top{background:var(--card);border-bottom:1px solid var(--line)}
 .top .wrap{padding-top:.85rem;padding-bottom:.85rem}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:.6rem 1rem;flex-wrap:wrap}
-.brand{margin:0;font-size:1.05rem;font-weight:800;letter-spacing:-.02em;line-height:1.15}
-.brand a{display:inline-flex;align-items:center;gap:.55rem;color:var(--ink);text-decoration:none}
+.brand{margin:0;font-family:var(--serif);font-size:1.2rem;font-weight:700;letter-spacing:.005em;line-height:1.15}
+.brand a{color:var(--ink);text-decoration:none}
 .brand a:hover{color:var(--accent)}
-.mark{
-  display:inline-flex;align-items:center;justify-content:center;flex:none;
-  width:1.8rem;height:1.8rem;border-radius:.55rem;
-  font-size:.95rem;font-weight:800;letter-spacing:0;color:#fff;
-  background:linear-gradient(145deg,#2f6ae8,#1550d0 55%,#0e3a99);
-  box-shadow:0 1px 2px rgba(15,62,163,.35);
-}
 .nav{display:flex;align-items:center;gap:.1rem;font-size:.88rem}
 .nav a{color:var(--muted);text-decoration:none;padding:.2rem .4rem;border-radius:6px}
 .nav a:hover{color:var(--accent);background:var(--accent-soft)}
@@ -443,9 +436,7 @@ img{max-width:100%;height:auto}
   mask-image:linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,0) 74%);
 }
 .hero .wrap{position:relative;z-index:1;padding-top:1.5rem;padding-bottom:1.7rem}
-.hero .brand{font-size:1.95rem;letter-spacing:-.035em}
-.hero .mark{width:2.5rem;height:2.5rem;border-radius:.78rem;font-size:1.3rem}
-.hero .lede{margin:1.05rem 0 0;max-width:32rem;font-size:1.02rem;line-height:1.45;color:var(--ink-soft)}
+.hero .brand{font-size:2.1rem;letter-spacing:-.01em}
 .hero .stat{
   margin:.75rem 0 0;display:flex;align-items:center;gap:.45rem;
   font-size:.76rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
@@ -574,8 +565,6 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
   .page{padding-top:2.1rem;padding-bottom:3.25rem}
   .hero .wrap{padding-top:2.35rem;padding-bottom:2.2rem}
   .hero .brand{font-size:2.6rem}
-  .hero .mark{width:3.2rem;height:3.2rem;border-radius:.98rem;font-size:1.7rem}
-  .hero .lede{margin-top:1.15rem;font-size:1.1rem}
   .grid{--gap:1.15rem}
   h1{font-size:1.8rem}
   .card{padding:1.85rem}
@@ -587,28 +576,20 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
 // Layout
 // ---------------------------------------------------------------------------
 
-/**
- * The brand mark: an accent tile with a white V. Same shape as the favicon, so
- * the tab and the page agree. Pure CSS + one letter — no image request.
- */
+/** The wordmark: plain editorial serif, no mark. The favicon carries the V. */
 function brandBlock(isHome) {
   const tag = isHome ? 'h1' : 'p';
-  return (
-    `      <${tag} class="brand"><a href="${u('/')}">` +
-    `<span class="mark" aria-hidden="true">V</span>Voyeur</a></${tag}>`
-  );
+  return `      <${tag} class="brand"><a href="${u('/')}">Voyeur</a></${tag}>`;
 }
 
 function layout(opts) {
   const canonical = SITE_URL && opts.canonicalPath ? SITE_URL + opts.canonicalPath : '';
   const wrapClass = opts.wide ? 'wrap page' : 'wrap narrow page';
   const hero = opts.hero || null;
-  const heroLines = hero
-    ? `    <p class="lede">${esc(TAGLINE)}</p>\n` +
-      (hero.stat
-        ? `    <p class="stat"><span class="dot" aria-hidden="true"></span>${esc(hero.stat)}</p>\n`
-        : '')
-    : '';
+  const heroLines =
+    hero && hero.stat
+      ? `    <p class="stat"><span class="dot" aria-hidden="true"></span>${esc(hero.stat)}</p>\n`
+      : '';
 
   return `<!doctype html>
 <html lang="en">
