@@ -604,7 +604,7 @@ function layout(opts) {
 ${canonical ? `<link rel="canonical" href="${esc(canonical)}">\n` : ''}<meta property="og:title" content="${esc(opts.title)}">
 <meta property="og:description" content="${esc(opts.description)}">
 <meta property="og:type" content="website">
-<meta name="robots" content="index,follow">
+<meta name="robots" content="${opts.noindex ? 'noindex' : 'index,follow'}">
 <style>${CSS}</style>
 </head>
 <body>
@@ -873,6 +873,7 @@ function render404() {
     title: 'Not found — Voyeur',
     description: 'That page is not here. Browse the Voyeur catalog instead.',
     canonicalPath: '',
+    noindex: true,
     body: body,
   });
 }
