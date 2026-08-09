@@ -16,11 +16,13 @@ Output lands in `site/dist/` (gitignored, rebuilt from scratch on every run):
 
 ```
 dist/
-├── index.html            the catalog, newest first
-├── about/index.html      how the pipeline works
-├── apps/<slug>/index.html one page per app
+├── index.html              the tile grid, newest first
+├── about/index.html        what Voyeur is, in a dozen lines
+├── apps/<slug>/index.html  one detail page per app
+├── apps/<slug>/app/        the app itself, copied verbatim
 ├── 404.html
-└── robots.txt
+├── robots.txt
+└── sitemap.xml             only when SITE_URL is set
 ```
 
 Flags and env:
@@ -28,7 +30,8 @@ Flags and env:
 | | |
 |---|---|
 | `--strict` | exit non-zero if any manifest produced a warning. For local checking only — the unattended pipeline should **not** use this, since a warning must never block a deploy. |
-| `SITE_URL` | absolute origin, e.g. `https://voyeur.vercel.app`. When set, canonical `<link>` tags and a `sitemap.xml` are emitted. Unset by default: a wrong canonical URL is worse than none. |
+| `SITE_URL` | absolute origin. Production is `https://voyeur-catalog.vercel.app`. When set, canonical `<link>` tags and a `sitemap.xml` are emitted. Unset by default: a wrong canonical URL is worse than none. |
+| `BASE_PATH` | prefix for every internal link when the site is served from a subpath. Empty (site root) by default, which is what Vercel needs. |
 
 ## Preview
 
@@ -42,7 +45,7 @@ Check it at 375px wide first. Most fashion problems happen while standing in a s
 
 ## Deploy
 
-Its own Vercel project (`voyeur-site`), separate from every app, per `docs/ARCHITECTURE.md`. Build command `node site/build.js`, output directory `site/dist`, no install step. Rebuild and redeploy after every ship so new entries appear.
+Its own Vercel project at **https://voyeur-catalog.vercel.app**, separate from every app, per `docs/ARCHITECTURE.md`. Build command `node site/build.js`, output directory `site/dist`, no install step. Rebuild and redeploy after every ship so new entries appear.
 
 ## What it reads
 
@@ -54,18 +57,21 @@ What the builder does with it:
 - **Optional, degrades quietly:** `description`, `limitations`, `evidence`, `liveUrl`, `created`, `updated`, `tech`, `localRun`, `license`.
 - **Bad input never kills the build.** Unparseable JSON, a missing manifest, an unusable slug — the app is skipped, a loud warning is printed, and every other app still ships. One bad file must not cost us the catalog.
 - **Unknown `status` values become `wip`**, never `live`. Guessing "live" on a malformed manifest would publish a claim we can't stand behind.
-- **`liveUrl` must be http(s).** Anything else (`javascript:`, `data:`) is dropped and the card renders without a link.
+- **`liveUrl` must be http(s).** Anything else (`javascript:`, `data:`) is dropped and the tile links to the detail page instead.
 - **Everything from a manifest is HTML-escaped** on the way out. Manifests are written by agents and are a real injection path.
-- **Empty `limitations` on a live or broken app warns**, and the app page says the limitations weren't declared rather than implying there are none. See `docs/PRINCIPLES.md` on honesty.
+- **Empty `limitations` on a live or broken app warns**, and the detail page says the limitations weren't declared rather than implying there are none. See `docs/PRINCIPLES.md` on honesty.
 - **Sort order** is `created` descending, undated last.
 
-## Design constraints
+## Design
 
-Same rules as any Voyeur app: static, fast, mobile-first at 375px, no tracking.
+Light mode only. A tile grid you click, not a page you read.
 
+- **Home** is a responsive CSS grid of tiles: app name, the `need` one-liner, a status chip. The whole tile is the click target and it goes **straight to the app** (`liveUrl`); a small secondary "Details" link goes to the detail page. Broken and retired apps get a muted tile whose click target is the detail page, not a link we know is dead — done with a stretched `::after` on the title anchor, so there are no nested `<a>` elements and no JavaScript.
+- **Detail pages** are compact: name, need, "Open the app", then What it does, Limitations, Who asked, Run locally, source, dates.
+- One column below ~28rem, filling to 4 columns on a wide screen via `auto-fill` / `minmax`. No horizontal scroll at 375px.
 - All CSS is inlined in the page. No external stylesheets, no webfonts, no CDNs, no third-party requests of any kind.
 - No JavaScript. A static list does not need hydration.
-- System font stack; light and dark via `prefers-color-scheme`.
+- System font stack, one accent colour, no dark-mode variant.
 - Semantic HTML, real `<a href>` links, one `<title>` and `<meta name="description">` per page.
 
 ## Adding a page type

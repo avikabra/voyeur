@@ -313,7 +313,12 @@ body{
   font-size:16px;
   line-height:1.55;
   -webkit-font-smoothing:antialiased;
+  overflow-wrap:break-word;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
 }
+main{flex:1}
 .wrap{max-width:68rem;margin:0 auto;padding:0 1rem}
 .wrap.narrow{max-width:42rem}
 a{color:var(--accent);text-underline-offset:.15em}
@@ -350,8 +355,9 @@ main{padding:1.5rem 0 2.5rem}
 .tile .foot{margin:0;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
 .details{position:relative;z-index:1;font-size:.82rem;color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line-strong)}
 .details:hover{color:var(--accent);border-color:var(--accent)}
-.tile.muted{background:#fbfbfc}
+.tile.muted{background:#f2f3f5;border-color:#dfe2e7}
 .tile.muted h2 a{color:var(--ink-soft)}
+.tile.muted .need{color:var(--muted)}
 
 .chip{
   display:inline-block;font-size:.67rem;font-weight:700;letter-spacing:.07em;
@@ -387,6 +393,7 @@ ul.list{margin:0;padding-left:1.15rem;color:var(--ink-soft);font-size:.93rem}
 ul.list li{margin:0 0 .35rem}
 ul.plain{list-style:none;margin:0;padding:0;font-size:.93rem}
 ul.plain li{margin:0 0 .4rem;color:var(--ink-soft)}
+ul.plain a{overflow-wrap:anywhere}
 ul.plain .note{color:var(--muted);font-size:.87rem}
 pre{
   margin:0 0 .5rem;padding:.7rem .85rem;background:#f5f6f8;border:1px solid var(--line);
@@ -518,7 +525,7 @@ ${apps.map(renderTile).join('\n')}
     description:
       'A catalog of small, free fashion tools. Built autonomously. No accounts, no fees.',
     canonicalPath: '/',
-    wide: true,
+    wide: apps.length > 0, // a one-line empty state doesn't need the full grid width
     body: body,
   });
 }

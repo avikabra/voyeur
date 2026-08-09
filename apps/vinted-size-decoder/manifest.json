@@ -2,13 +2,13 @@
   "slug": "vinted-size-decoder",
   "name": "Size Decoder for Vinted",
   "need": "Work out what Vinted's S/M/L buckets mean for your actual UK size — and how to actually find your size on there.",
-  "description": "In November 2025 Vinted collapsed UK womenswear numeric sizes into letter buckets with ranges — \"S / UK 8–10\", \"M / UK 12–14\" — and auto-converted everyone's existing listings. Ask the filter for your size and the bucket hands you the other sizes in it too, plus mislabelled ones; sellers list bucket-only so buyers have to message to ask what the thing actually is. This decoder does three things. It tells you which bucket your UK size falls into under the widely reported system. It tells you which boxes to tick to stop missing listings, including the adjacent bucket and why that one specifically. And if you're selling, it gives you the bucket to list under plus a copy-ready description snippet with the numeric size and measurement placeholders, so buyers on any version of Vinted's UI can find you. The full mapping — new ranges next to the old pre-November single-size labels — is a plain HTML table that works with JavaScript switched off. Everything runs in your browser; there is no network request after the page loads.",
+  "description": "In November 2025 Vinted collapsed UK womenswear numeric sizes into letter buckets with ranges — \"S / UK 8–10\", \"M / UK 12–14\" — and auto-converted existing listings. Filter for your size and the bucket hands you the other sizes in it too; sellers list bucket-only, so buyers have to message to ask what the garment actually is. This decoder tells you which bucket your UK size falls into under the widely reported system, which boxes to tick to stop missing listings (including the adjacent bucket, and why that one), and — if you're selling — the bucket to list under plus a copy-ready description snippet with the numeric size and measurement placeholders. The full mapping, new ranges beside the old pre-November single-size labels, is a plain HTML table that works with JavaScript switched off. Everything runs in your browser; no network request after the page loads.",
   "limitations": [
     "UK womenswear tops, dresses and outerwear only. Jeans, trousers and shoes appear to have kept numeric sizing — inferred from the absence of complaints about them, not from anything Vinted published.",
     "Based on the sizing system widely reported after Vinted's change of 10 November 2025. Vinted has kept changing it since — an unconfirmed partial reversion around January 2026, and a per-account \"sizing standard\" picker reported rolling out around July 2026 — so your account may show something different from what this page describes.",
-    "It cannot fix Vinted's filters. It only helps you work around them: you still have to tick two buckets and scroll past sizes you don't want.",
+    "It cannot fix Vinted's filters, only help you work around them: you still tick two buckets and scroll past sizes you don't want.",
     "No EU or US equivalents are shown, because Vinted-specific mappings for these buckets could not be verified and generic conversions between the systems are disputed.",
-    "No menswear, no kids' sizing, no per-country variation — none of it could be verified, so none of it is here.",
+    "No menswear, no kids' sizing, no per-country variation — none of it could be verified.",
     "The XS bucket (UK 4–6) and the XL bucket (UK 20–22) are moderate-confidence; the old-system XS label is the least certain data point on the page.",
     "The mapping is compiled from user threads on Mumsnet and press reporting of the change (ChannelX, Glossy, Yorkshire Post syndication), not from official Vinted documentation, and it is a snapshot dated 9 August 2026.",
     "Not affiliated with Vinted in any way."
@@ -25,10 +25,14 @@
     "https://www.mumsnet.com/talk/style_and_beauty/5078347-why-does-vinted-use-non-standard-size-categories — the older S=8/M=10 confusion, pre-change"
   ],
   "status": "live",
-  "liveUrl": "https://avikabra.github.io/voyeur/apps/vinted-size-decoder/app/",
+  "liveUrl": "https://voyeur-catalog.vercel.app/apps/vinted-size-decoder/app/",
   "created": "2026-08-09",
   "updated": "2026-08-09",
-  "tech": ["static", "vanilla-js", "no-build"],
+  "tech": [
+    "static",
+    "vanilla-js",
+    "no-build"
+  ],
   "localRun": "npx serve apps/vinted-size-decoder",
   "license": "MIT"
 }
