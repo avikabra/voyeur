@@ -7,11 +7,11 @@
 <meta name="description" content="Which Vinted S/M/L bucket your UK size falls in, which boxes to tick so you stop missing listings, and what to write when you sell. Free, no account.">
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="index,follow">
-<link rel="canonical" href="https://avikabra.github.io/voyeur/apps/vinted-size-decoder/app/">
+<link rel="canonical" href="https://voyeur-catalog.vercel.app/apps/vinted-size-decoder/app/">
 <meta property="og:title" content="What do Vinted's S/M/L sizes actually mean? · Voyeur (unofficial)">
 <meta property="og:description" content="A plain decoder for Vinted's UK womenswear size buckets: what S, M, L map to, which boxes to tick, and how to list so buyers can find you.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://avikabra.github.io/voyeur/apps/vinted-size-decoder/app/">
+<meta property="og:url" content="https://voyeur-catalog.vercel.app/apps/vinted-size-decoder/app/">
 <meta property="og:site_name" content="Voyeur">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23faf8f5'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='19' font-weight='600' text-anchor='middle' fill='%239a3d18'%3EM%3C/text%3E%3C/svg%3E">
 <style>
@@ -72,28 +72,16 @@ main{padding:2rem 0 2.5rem}
 
 h1{font-family:var(--serif);font-size:1.75rem;line-height:1.18;letter-spacing:-.015em;margin:0 0 .8rem;font-weight:600}
 .lede{font-family:var(--serif);font-size:1.15rem;line-height:1.45;color:var(--ink-soft);margin:0 0 1.5rem}
-.eyebrow{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 .75rem;font-weight:600}
 h2{font-family:var(--serif);font-size:1.3rem;line-height:1.25;margin:0 0 .8rem;font-weight:600;letter-spacing:-.01em}
 h3{font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 .7rem;font-weight:600}
 p{margin:0 0 1rem;color:var(--ink-soft)}
 section{margin:0 0 2.5rem}
 
 /* status banner --------------------------------------------------------- */
+p.measure{font-size:.95rem;margin:0 0 1.25rem}
 .banner{border-left:2px solid var(--accent);padding:.1rem 0 .1rem 1rem;margin:0 0 1.25rem}
 .banner p{margin:0 0 .5rem;font-size:.93rem;color:var(--ink-soft)}
 .banner p:last-child{margin-bottom:0}
-details.timeline{margin:0 0 2rem;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
-details.timeline summary{
-  cursor:pointer;list-style:none;padding:.85rem 0;
-  font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;
-}
-details.timeline summary::-webkit-details-marker{display:none}
-details.timeline summary::after{content:" +";color:var(--accent)}
-details.timeline[open] summary::after{content:" \2212";}
-details.timeline summary:hover{color:var(--accent)}
-.tl{list-style:none;margin:0;padding:0 0 1rem}
-.tl li{border-top:1px solid var(--rule);padding:.75rem 0;font-size:.93rem;color:var(--ink-soft)}
-.tl b{display:block;color:var(--ink);font-weight:600;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.15rem}
 
 /* tool ------------------------------------------------------------------ */
 .tool{border:1px solid var(--rule-strong);background:var(--panel);padding:1.15rem;margin:0 0 2.5rem}
@@ -187,11 +175,6 @@ tbody td b{font-weight:600;color:var(--ink)}
 td.na{color:var(--muted)}
 .conf{display:block;font-size:.78rem;color:var(--muted);margin-top:.1rem;line-height:1.35}
 
-/* checklist ------------------------------------------------------------- */
-.checklist{list-style:none;margin:0 0 1rem;padding:0;border-top:1px solid var(--rule)}
-.checklist li{border-bottom:1px solid var(--rule);padding:.7rem 0 .7rem 1.6rem;position:relative;color:var(--ink-soft);font-size:.95rem}
-.checklist li::before{content:"\2713";position:absolute;left:0;top:.7rem;color:var(--accent);font-weight:700}
-
 /* footer ---------------------------------------------------------------- */
 footer{border-top:1px solid var(--rule);padding:1.75rem 0 3rem;font-size:.82rem;color:var(--muted)}
 footer p{margin:0 0 .45rem;color:var(--muted)}
@@ -216,7 +199,7 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
 <body>
 <header class="masthead">
   <div class="wrap">
-    <a class="wordmark" href="https://avikabra.github.io/voyeur/">Voyeur</a>
+    <a class="wordmark" href="https://voyeur-catalog.vercel.app/">Voyeur</a>
   </div>
 </header>
 
@@ -224,10 +207,10 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
 <div class="wrap">
 
   <h1>What do Vinted&#39;s S/M/L sizes actually mean?</h1>
-  <p class="lede">Vinted swapped UK numeric sizes for letter buckets &mdash; ask it for your size and the bucket hands you the other sizes in it too.</p>
+  <p class="lede">Vinted swapped UK numeric sizes for letter buckets &mdash; here is which bucket yours falls in.</p>
 
   <div class="nojs">
-    <p><b>The picker below needs JavaScript.</b> It is switched off or blocked, so you are getting the reference tables instead &mdash; they have the same mapping in them, and they are further down this page.</p>
+    <p><b>The picker needs JavaScript.</b> The reference tables further down have the same mapping.</p>
   </div>
 
   <!-- ------------------------------------------------------------------ -->
@@ -247,52 +230,30 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
     </div>
   </div>
 
-  <p>Below: what the letters map to, which boxes to tick so you stop missing things, and what to write when you sell.</p>
+  <p class="measure">Trust measurements over labels &mdash; ask for pit to pit and length if they are not shown.</p>
 
   <div class="banner">
-    <p>Based on the widely reported <b>Nov 2025</b> sizing change for UK womenswear. Vinted has been changing this system through 2026 &mdash; accounts may see different layouts.</p>
-    <p>The tick-adjacent-buckets and check-measurements advice holds either way.</p>
+    <p>Based on Vinted&#39;s widely reported <b>Nov 2025</b> sizing change &mdash; Vinted has kept changing things since, so treat this as a guide, not gospel.</p>
   </div>
-
-  <details class="timeline">
-    <summary>What changed, and when</summary>
-    <ul class="tl">
-      <li><b>10 Nov 2025 &mdash; the change</b>UK womenswear sizes were collapsed into letter buckets with ranges (&ldquo;S / UK 8&ndash;10&rdquo;), and existing listings were auto-converted. Widely reported by users; this is the system this page encodes.</li>
-      <li><b>~Jan 2026 &mdash; a partial reversion, unconfirmed</b>Some users reported UK numeric sizes coming back. We could not confirm it landed, or for whom. Treat it as &ldquo;some people may see numbers again&rdquo;.</li>
-      <li><b>~Jul 2026 &mdash; reports of a per-account sizing picker rolling out</b>Reports of a per-account &ldquo;sizing standard&rdquo; setting. If that is on your account, two people can be looking at the same listing and see different size labels. Another reason to write the number in the description.</li>
-    </ul>
-  </details>
-
-  <section>
-    <h2>Whatever the label says, check the measurements</h2>
-    <p>This is the part that actually works, on any version of Vinted&#39;s UI. Letters and numbers are both the seller&#39;s guess; a tape measure is not.</p>
-    <ul class="checklist">
-      <li>Measure a garment you already own and love the fit of. That is your reference, not a size label.</li>
-      <li>Ask the seller for <b>pit to pit</b> (armpit to armpit, laid flat), <b>shoulder to hem</b>, and <b>waist laid flat</b> for anything fitted.</li>
-      <li>Ask for a photo of the size tag. It settles what the garment actually is, whatever bucket the listing sits in.</li>
-      <li>Remember laid-flat measurements are half the body measurement &mdash; a 52cm pit to pit is a 104cm chest.</li>
-      <li>If a seller won&#39;t measure, that is information too. Plenty of others will.</li>
-    </ul>
-  </section>
 
   <!-- ------------------------------------------------------------------ -->
   <!-- REFERENCE TABLES — plain HTML, no JS required                       -->
   <!-- ------------------------------------------------------------------ -->
   <section id="table">
     <h2>The full mapping</h2>
-    <p>Two systems, side by side. Notice that the letters moved: under the old system <b>M</b> meant a UK 10; under the new one it means a UK 12&ndash;14. Same letter, different garment.</p>
+    <p>The letters moved: old <b>M</b> meant a UK 10, new <b>M</b> means a UK 12&ndash;14.</p>
 
     <div class="tablewrap">
       <table>
         <caption>
-          <b>Vinted UK womenswear letter sizes &mdash; old system vs new</b>
-          New system as widely reported after Vinted&#39;s change of 10 Nov 2025. Old system as used before that date. Compiled 9 Aug 2026 from user threads on Mumsnet and press reporting of the change (ChannelX, Glossy, Yorkshire Post syndication) &mdash; not from Vinted&#39;s own documentation.
+          <b>Vinted UK womenswear letter sizes &mdash; old vs new</b>
+          Compiled 9 Aug 2026 from user threads and press reporting of the 10 Nov 2025 change &mdash; not from Vinted&#39;s own documentation.
         </caption>
         <thead>
           <tr>
             <th scope="col">Letter</th>
-            <th scope="col">New: UK sizes in the bucket <span class="conf">from 10 Nov 2025</span></th>
-            <th scope="col">Old: the single UK size it meant <span class="conf">before 10 Nov 2025</span></th>
+            <th scope="col">New bucket <span class="conf">from 10 Nov 2025</span></th>
+            <th scope="col">Old label <span class="conf">before 10 Nov 2025</span></th>
           </tr>
         </thead>
         <tbody>
@@ -310,7 +271,7 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
       <table>
         <caption>
           <b>Look up your own UK size</b>
-          Same data, read the other way round. &ldquo;Also tick&rdquo; is our advice, not Vinted&#39;s: users report auto-converted listings landing in the wrong bucket, and sellers of in-between garments guess.
+          Same data, the other way round. &ldquo;Also tick&rdquo; is our advice, not Vinted&#39;s.
         </caption>
         <thead>
           <tr>
@@ -337,14 +298,8 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
       </table>
     </div>
 
-    <h3>What this table does not cover, and why</h3>
-    <ul class="plain">
-      <li><b>No EU or US column.</b> Vinted-specific EU/US labels for these buckets could not be verified, and generic conversions between the three systems are disputed. A wrong column would be worse than no column.</li>
-      <li><b>Womenswear tops, dresses and outerwear only.</b> Jeans, trousers and shoes appear to have kept their numeric sizing &mdash; that is inferred from the absence of complaints about them, not from anything Vinted published.</li>
-      <li><b>No menswear, no kids&#39;.</b> Not verified, so not shown.</li>
-      <li><b>No sizes above XXL or below XS.</b> We saw claims of further buckets but could not corroborate them, so they are not here.</li>
-      <li><b>No per-country variation.</b> This is the UK womenswear view. If you are shopping another country&#39;s Vinted, assume none of the above holds.</li>
-    </ul>
+    <h3>Not covered</h3>
+    <p class="note">No EU or US columns, no menswear, kids&#39; or other countries, and nothing beyond XS&ndash;XXL: none of it could be verified. UK womenswear tops, dresses and outerwear only &mdash; jeans, trousers and shoes appear to have kept numeric sizing, inferred from the absence of complaints rather than anything Vinted published.</p>
   </section>
 
 </div>
@@ -353,8 +308,7 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
 <footer>
   <div class="wrap">
     <p>Not affiliated with Vinted. Free, no account, nothing leaves your browser.</p>
-    <p><a href="https://avikabra.github.io/voyeur/">More Voyeur tools</a> &middot; <a href="https://github.com/avikabra/voyeur">Source on GitHub</a></p>
-    <p>Encoded from user reports of Vinted&#39;s Nov 2025 change, compiled 9 Aug 2026. If Vinted has changed it again, trust the measurements over this page.</p>
+    <p><a href="https://voyeur-catalog.vercel.app/">More Voyeur tools</a> &middot; <a href="https://github.com/avikabra/voyeur">Source on GitHub</a></p>
   </div>
 </footer>
 

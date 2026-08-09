@@ -13,9 +13,10 @@
  *   --strict   exit non-zero if any warnings were emitted (for local checking;
  *              the unattended pipeline should NOT use this)
  * Env:
- *   SITE_URL   absolute origin (e.g. https://voyeur.example). When set, canonical
- *              links and a sitemap.xml are emitted. Omitted when unset — a wrong
- *              canonical URL is worse than none.
+ *   SITE_URL   absolute origin (production: https://voyeur-catalog.vercel.app).
+ *              When set, canonical links and a sitemap.xml are emitted. Omitted
+ *              when unset — a wrong canonical URL is worse than none.
+ *   BASE_PATH  prefix for internal links when served from a subpath.
  */
 
 'use strict';
@@ -34,7 +35,7 @@ const OUT_DIR = path.join(SITE_DIR, 'dist');
 
 const REPO_URL = 'https://github.com/avikabra/voyeur';
 const REPO_TREE = REPO_URL + '/tree/main';
-const TAGLINE = 'Free fashion tools, built by an autonomous AI. No accounts. No fees. Ever.';
+const TAGLINE = 'Free fashion tools, built autonomously. No accounts, no fees.';
 
 const STRICT = process.argv.includes('--strict');
 const SITE_URL = (process.env.SITE_URL || '').replace(/\/+$/, '');
@@ -47,18 +48,9 @@ function u(p) {
 
 const STATUSES = {
   live: { label: 'Live', note: '' },
-  wip: {
-    label: 'In progress',
-    note: 'Still being built. It may be incomplete or change without warning.',
-  },
-  broken: {
-    label: 'Broken',
-    note: 'This app is currently broken. It is listed anyway — a dead link you discover yourself is worse than an admission you read first.',
-  },
-  retired: {
-    label: 'Retired',
-    note: 'Retired. The need went away, or something it depended on did. The source stays up.',
-  },
+  wip: { label: 'In progress', note: 'Still being built. It may be incomplete.' },
+  broken: { label: 'Broken', note: 'This app is currently broken.' },
+  retired: { label: 'Retired', note: 'Retired. The source stays up.' },
 };
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -251,7 +243,7 @@ function normalize(m, dirName) {
     warn(where + ' has a liveUrl that is not an http(s) URL — dropping the link');
   }
   if (status === 'live' && !liveUrl) {
-    warn(where + ' is marked "live" but has no usable liveUrl — the card will say so');
+    warn(where + ' is marked "live" but has no usable liveUrl — its tile will link to its details page');
   }
 
   const limitations = stringArray(m.limitations);
@@ -292,35 +284,25 @@ function normalize(m, dirName) {
 }
 
 // ---------------------------------------------------------------------------
-// Styles — inlined into every page. No external assets, no fonts, no JS.
+// Styles — inlined into every page. Light only. No external assets, no JS.
 // ---------------------------------------------------------------------------
 
 const CSS = `
 *,*::before,*::after{box-sizing:border-box}
 :root{
-  --bg:#faf8f5;
-  --panel:#f3efe9;
-  --ink:#17140f;
-  --ink-soft:#3f382f;
-  --muted:#6f665b;
-  --rule:#ddd5c9;
-  --rule-strong:#c6bcac;
-  --accent:#9a3d18;
-  --serif:ui-serif,Georgia,"Iowan Old Style","Times New Roman",Times,serif;
+  --bg:#f7f7f8;
+  --card:#ffffff;
+  --ink:#15171c;
+  --ink-soft:#3d434b;
+  --muted:#6c727c;
+  --line:#e3e5ea;
+  --line-strong:#cdd1d8;
+  --accent:#1550d0;
+  --accent-dark:#0f3ea3;
+  --accent-soft:#eaf0fd;
+  --accent-line:#c7d8fa;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
-}
-@media (prefers-color-scheme:dark){
-  :root{
-    --bg:#100f0e;
-    --panel:#1a1817;
-    --ink:#f4efe8;
-    --ink-soft:#d5cdc2;
-    --muted:#9a9084;
-    --rule:#2e2a26;
-    --rule-strong:#463f38;
-    --accent:#e08a5f;
-  }
 }
 html{-webkit-text-size-adjust:100%}
 body{
@@ -328,149 +310,103 @@ body{
   background:var(--bg);
   color:var(--ink);
   font-family:var(--sans);
-  font-size:17px;
-  line-height:1.6;
+  font-size:16px;
+  line-height:1.55;
   -webkit-font-smoothing:antialiased;
 }
-.wrap{max-width:44rem;margin:0 auto;padding:0 1.25rem}
-a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:.18em}
-a:hover{text-decoration-thickness:2px}
-:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.wrap{max-width:68rem;margin:0 auto;padding:0 1rem}
+.wrap.narrow{max-width:42rem}
+a{color:var(--accent);text-underline-offset:.15em}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 img{max-width:100%;height:auto}
-hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
 
-/* masthead ------------------------------------------------------------- */
-.masthead{border-bottom:1px solid var(--rule);padding:1.75rem 0 1.5rem}
-.wordmark{
-  display:inline-block;
-  font-family:var(--serif);
-  font-size:1.4rem;
-  font-weight:600;
-  letter-spacing:.26em;
-  text-transform:uppercase;
-  color:var(--ink);
-  text-decoration:none;
-  margin:0 0 .35rem;
-}
+/* header --------------------------------------------------------------- */
+.top{background:var(--card);border-bottom:1px solid var(--line)}
+.top .wrap{padding-top:1.15rem;padding-bottom:1.15rem}
+.wordmark{display:inline-block;font-size:1.15rem;font-weight:700;letter-spacing:.01em;color:var(--ink);text-decoration:none}
 .wordmark:hover{color:var(--accent)}
-.tagline{margin:0;color:var(--muted);font-size:.95rem;line-height:1.5;max-width:32rem}
-.masthead nav{margin-top:1rem;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase}
-.masthead nav a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--rule-strong);padding-bottom:2px}
-.masthead nav a:hover{color:var(--accent);border-color:var(--accent)}
-.masthead nav span{color:var(--rule-strong);padding:0 .5rem}
+.tagline{margin:.25rem 0 0;color:var(--muted);font-size:.9rem}
+.top nav{margin-top:.55rem;font-size:.85rem;color:var(--line-strong)}
+.top nav a{color:var(--muted);text-decoration:none}
+.top nav a:hover{color:var(--accent)}
+.top nav span{padding:0 .35rem}
 
-main{padding:2.5rem 0 3rem}
+main{padding:1.5rem 0 2.5rem}
 
-/* shared type ---------------------------------------------------------- */
-.eyebrow{
-  font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--muted);margin:0 0 .75rem;font-weight:600;
+/* tiles ---------------------------------------------------------------- */
+.grid{list-style:none;margin:0;padding:0;display:grid;gap:.75rem;grid-template-columns:repeat(auto-fill,minmax(15.5rem,1fr))}
+.tile{
+  position:relative;display:flex;flex-direction:column;gap:.45rem;
+  background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:1rem;min-height:9rem;
 }
-.lede{font-family:var(--serif);font-size:1.25rem;line-height:1.45;color:var(--ink-soft);margin:0 0 1.25rem}
-.count{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 2rem}
+.tile:hover{border-color:var(--accent-line);box-shadow:0 1px 3px rgba(20,23,28,.07)}
+.tile:focus-within{border-color:var(--accent)}
+.tile h2{margin:0;font-size:1rem;line-height:1.3;font-weight:600}
+.tile h2 a{color:var(--ink);text-decoration:none}
+/* the whole tile is the click target for the primary link */
+.tile h2 a::after{content:"";position:absolute;inset:0;border-radius:10px}
+.tile .need{margin:0;flex:1;color:var(--ink-soft);font-size:.9rem}
+.tile .foot{margin:0;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
+.details{position:relative;z-index:1;font-size:.82rem;color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line-strong)}
+.details:hover{color:var(--accent);border-color:var(--accent)}
+.tile.muted{background:#fbfbfc}
+.tile.muted h2 a{color:var(--ink-soft)}
 
-/* catalog cards -------------------------------------------------------- */
-.catalog{list-style:none;margin:0;padding:0}
-.card{border-top:1px solid var(--rule);padding:2rem 0}
-.card:first-child{border-top:0;padding-top:0}
-.card-need{font-family:var(--serif);font-weight:600;font-size:1.5rem;line-height:1.25;margin:0 0 .6rem;letter-spacing:-.01em}
-.card-need a{color:var(--ink);text-decoration:none}
-.card-need a:hover{color:var(--accent)}
-.card-meta{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;margin:0 0 .75rem;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.card-meta .appname{color:var(--ink-soft);font-weight:600}
-.card p.desc{margin:0 0 1.1rem;color:var(--ink-soft)}
-.card-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem 1.25rem;margin:0}
-.card.dim{opacity:.68}
-.card.dim:hover,.card.dim:focus-within{opacity:1}
-.status-note{margin:0 0 1rem;font-size:.9rem;color:var(--muted);border-left:2px solid var(--rule-strong);padding-left:.85rem}
-
-.badge{
-  display:inline-flex;align-items:center;gap:.4rem;
-  font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;
-  border:1px solid var(--rule-strong);border-radius:999px;padding:.15rem .6rem;color:var(--muted);
+.chip{
+  display:inline-block;font-size:.67rem;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;padding:.15rem .45rem;border-radius:999px;
+  background:#eef0f3;color:var(--muted);border:1px solid var(--line);white-space:nowrap;
 }
-.badge::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
-.badge.live{color:var(--accent);border-color:var(--accent)}
+.chip.live{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line)}
 
-.use{
-  display:inline-block;font-weight:600;font-size:.95rem;
-  border:1px solid var(--accent);border-radius:2px;
-  padding:.5rem 1.05rem;text-decoration:none;color:var(--accent);
+/* buttons -------------------------------------------------------------- */
+.btn{
+  display:inline-block;background:var(--accent);color:#fff;text-decoration:none;
+  font-weight:600;font-size:.95rem;padding:.6rem 1.1rem;border-radius:8px;
 }
-.use:hover{background:var(--accent);color:var(--bg)}
-.secondary{font-size:.9rem;color:var(--muted);text-decoration:none;border-bottom:1px solid var(--rule-strong);padding-bottom:2px}
-.secondary:hover{color:var(--accent);border-color:var(--accent)}
-.hint{font-size:.9rem;color:var(--muted)}
+.btn:hover{background:var(--accent-dark)}
+.btn.ghost{background:var(--card);color:var(--accent);border:1px solid var(--accent-line)}
+.btn.ghost:hover{background:var(--accent-soft)}
+.hint{font-size:.88rem;color:var(--muted)}
 
-/* empty state ---------------------------------------------------------- */
-.empty h1{font-family:var(--serif);font-size:1.85rem;line-height:1.2;margin:0 0 1.1rem;letter-spacing:-.015em;font-weight:600}
-.empty p{margin:0 0 1.1rem;color:var(--ink-soft)}
-.scouting{list-style:none;margin:1.5rem 0 2rem;padding:0;border-top:1px solid var(--rule)}
-.scouting li{border-bottom:1px solid var(--rule);padding:.7rem 0;font-family:var(--serif);font-size:1.02rem;color:var(--ink-soft)}
-.cta-row{display:flex;flex-wrap:wrap;gap:.75rem 1.25rem;align-items:center;margin:0}
-
-/* app detail ----------------------------------------------------------- */
-.crumb{font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;margin:0 0 1.5rem}
+/* cards for text pages -------------------------------------------------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1.25rem}
+.crumb{margin:0 0 .85rem;font-size:.85rem}
 .crumb a{color:var(--muted);text-decoration:none}
 .crumb a:hover{color:var(--accent)}
-h1.need{font-family:var(--serif);font-size:1.9rem;line-height:1.2;letter-spacing:-.015em;margin:0 0 .9rem;font-weight:600}
-.detail-meta{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;margin:0 0 1.5rem;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.detail-meta .appname{color:var(--ink-soft);font-weight:600}
-.hero-actions{margin:0 0 2.25rem;display:flex;flex-wrap:wrap;gap:.75rem 1.25rem;align-items:center}
-section{margin:0 0 2.25rem}
-section h2{font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 .85rem;font-weight:600}
-section p{margin:0 0 1rem;color:var(--ink-soft)}
-.limits{border:1px solid var(--rule-strong);padding:1.25rem 1.25rem .5rem;background:var(--panel)}
-.limits h2{margin-bottom:.75rem;color:var(--ink-soft)}
-.limits ul{margin:0 0 .75rem;padding-left:1.1rem}
-.limits li{margin:0 0 .55rem;color:var(--ink-soft)}
-.evidence{list-style:none;margin:0;padding:0}
-.evidence li{border-top:1px solid var(--rule);padding:.7rem 0;font-size:.95rem}
-.evidence li:first-child{border-top:0;padding-top:0}
-.evidence .note{display:block;color:var(--muted);font-size:.88rem;margin-top:.2rem}
+h1{font-size:1.4rem;line-height:1.25;margin:0 0 .35rem;font-weight:700;letter-spacing:-.01em}
+.subtitle{margin:0 0 .9rem;color:var(--ink-soft)}
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:0 0 1rem;font-size:.85rem;color:var(--muted)}
+.actions{margin:0 0 .35rem;display:flex;flex-wrap:wrap;gap:.6rem .9rem;align-items:center}
+section{margin:1.5rem 0 0}
+section h2{font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 .45rem;font-weight:700}
+section p{margin:0 0 .5rem;color:var(--ink-soft);font-size:.95rem}
+section p:last-child{margin-bottom:0}
+ul.list{margin:0;padding-left:1.15rem;color:var(--ink-soft);font-size:.93rem}
+ul.list li{margin:0 0 .35rem}
+ul.plain{list-style:none;margin:0;padding:0;font-size:.93rem}
+ul.plain li{margin:0 0 .4rem;color:var(--ink-soft)}
+ul.plain .note{color:var(--muted);font-size:.87rem}
 pre{
-  margin:0 0 1rem;padding:.85rem 1rem;background:var(--panel);
-  border:1px solid var(--rule);overflow-x:auto;
-  font-family:var(--mono);font-size:.85rem;line-height:1.5;color:var(--ink-soft);
+  margin:0 0 .5rem;padding:.7rem .85rem;background:#f5f6f8;border:1px solid var(--line);
+  border-radius:8px;overflow-x:auto;font-family:var(--mono);font-size:.85rem;
+  line-height:1.5;color:var(--ink-soft);
 }
-.tags{list-style:none;display:flex;flex-wrap:wrap;gap:.5rem;margin:0;padding:0}
-.tags li{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border:1px solid var(--rule);padding:.2rem .55rem;border-radius:2px}
-dl.facts{margin:0;font-size:.9rem}
-dl.facts div{display:flex;gap:1rem;border-top:1px solid var(--rule);padding:.6rem 0}
-dl.facts div:first-child{border-top:0}
-dl.facts dt{margin:0;color:var(--muted);flex:0 0 8.5rem;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;padding-top:.15rem}
-dl.facts dd{margin:0;color:var(--ink-soft)}
-
-/* prose (about, 404) --------------------------------------------------- */
-.prose h1{font-family:var(--serif);font-size:1.9rem;line-height:1.2;letter-spacing:-.015em;margin:0 0 1rem;font-weight:600}
-.prose h2{font-family:var(--serif);font-size:1.2rem;letter-spacing:0;text-transform:none;color:var(--ink);margin:2.5rem 0 .85rem;font-weight:600}
-.prose p{margin:0 0 1.1rem;color:var(--ink-soft)}
-.prose ul{margin:0 0 1.1rem;padding-left:1.1rem;color:var(--ink-soft)}
-.prose li{margin:0 0 .55rem}
-.prose .steps{list-style:none;padding:0;counter-reset:step}
-.prose .steps li{counter-increment:step;border-top:1px solid var(--rule);padding:.9rem 0 .9rem 2.25rem;position:relative;margin:0}
-.prose .steps li::before{
-  content:counter(step);position:absolute;left:0;top:.95rem;
-  font-size:.72rem;letter-spacing:.1em;color:var(--muted);font-variant-numeric:tabular-nums;
-}
-.prose .steps b{display:block;color:var(--ink);font-weight:600}
+.dates{font-size:.85rem;color:var(--muted);margin:1.25rem 0 0}
 
 /* footer --------------------------------------------------------------- */
-footer{border-top:1px solid var(--rule);padding:1.75rem 0 3rem;font-size:.82rem;color:var(--muted)}
-footer p{margin:0 0 .45rem}
-footer a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--rule-strong)}
+footer{border-top:1px solid var(--line);background:var(--card);padding:1.1rem 0;font-size:.85rem;color:var(--muted)}
+footer p{margin:0}
+footer a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line-strong)}
 footer a:hover{color:var(--accent);border-color:var(--accent)}
 
-@media (min-width:40rem){
-  body{font-size:18px}
-  .wrap{padding:0 2rem}
-  .masthead{padding:2.5rem 0 2rem}
-  .wordmark{font-size:1.7rem}
-  main{padding:3.5rem 0 4rem}
-  .card-need{font-size:1.85rem}
-  h1.need,.empty h1,.prose h1{font-size:2.4rem}
-  .lede{font-size:1.4rem}
-  .card{padding:2.5rem 0}
+@media (min-width:48rem){
+  body{font-size:17px}
+  .wrap{padding:0 1.5rem}
+  main{padding:2rem 0 3rem}
+  h1{font-size:1.65rem}
+  .card{padding:1.75rem}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 `.trim();
@@ -481,6 +417,7 @@ footer a:hover{color:var(--accent);border-color:var(--accent)}
 
 function layout(opts) {
   const canonical = SITE_URL && opts.canonicalPath ? SITE_URL + opts.canonicalPath : '';
+  const wrapClass = opts.wide ? 'wrap' : 'wrap narrow';
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -488,7 +425,7 @@ function layout(opts) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(opts.title)}</title>
 <meta name="description" content="${esc(opts.description)}">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light">
 ${canonical ? `<link rel="canonical" href="${esc(canonical)}">\n` : ''}<meta property="og:title" content="${esc(opts.title)}">
 <meta property="og:description" content="${esc(opts.description)}">
 <meta property="og:type" content="website">
@@ -496,25 +433,21 @@ ${canonical ? `<link rel="canonical" href="${esc(canonical)}">\n` : ''}<meta pro
 <style>${CSS}</style>
 </head>
 <body>
-<header class="masthead">
+<header class="top">
   <div class="wrap">
     <a class="wordmark" href="${u('/')}">Voyeur</a>
     <p class="tagline">${esc(TAGLINE)}</p>
-    <nav>
-      <a href="${u('/')}">Catalog</a><span>/</span><a href="${u('/about/')}">How this works</a><span>/</span><a href="${REPO_URL}">Source</a>
-    </nav>
+    <nav><a href="${u('/about/')}">About</a><span>&middot;</span><a href="${REPO_URL}">GitHub</a></nav>
   </div>
 </header>
 <main>
-  <div class="wrap">
+  <div class="${wrapClass}">
 ${opts.body}
   </div>
 </main>
 <footer>
   <div class="wrap">
-    <p>Every app here was found, built, tested and shipped by an autonomous AI pipeline. No human writes the code, picks the ideas, or approves the deploys.</p>
-    <p>MIT licensed &middot; <a href="${REPO_URL}">Source on GitHub</a> &middot; <a href="${u('/about/')}">How this works</a></p>
-    <p>No accounts, no tracking, no third-party scripts.</p>
+    <p>MIT &middot; <a href="${REPO_URL}">GitHub</a> &middot; <a href="${u('/about/')}">About</a></p>
   </div>
 </footer>
 </body>
@@ -526,72 +459,46 @@ ${opts.body}
 // Fragments
 // ---------------------------------------------------------------------------
 
-function badge(status) {
+function chip(status) {
   const meta = STATUSES[status] || STATUSES.wip;
-  return `<span class="badge ${esc(status)}">${esc(meta.label)}</span>`;
+  return `<span class="chip ${esc(status)}">${esc(meta.label)}</span>`;
 }
 
-function useLink(app, label) {
-  if (!app.liveUrl) return '';
-  const text = label || 'Use it &rarr;';
-  const rel = app.status === 'live' ? '' : ' rel="nofollow"';
-  return `<a class="use" href="${esc(app.liveUrl)}"${rel}>${text}</a>`;
+function detailPath(app) {
+  return u('/apps/' + app.slug + '/');
 }
 
-function renderCard(app) {
-  const meta = STATUSES[app.status] || STATUSES.wip;
-  const dim = app.status === 'broken' || app.status === 'retired' ? ' dim' : '';
-  const created = formatDate(app.created);
+/**
+ * One tile. The whole tile is a click target for the primary link, via a
+ * stretched ::after on the title anchor — no nested <a>, no JavaScript.
+ * Working apps point straight at the app. Broken/retired ones point at the
+ * detail page instead of a link we know is dead.
+ */
+function renderTile(app) {
+  const usable = app.liveUrl && (app.status === 'live' || app.status === 'wip');
+  const href = usable ? app.liveUrl : detailPath(app);
+  const rel = usable && app.status !== 'live' ? ' rel="nofollow"' : '';
+  const muted = app.status === 'broken' || app.status === 'retired' ? ' muted' : '';
 
   const parts = [];
-  parts.push(`      <li class="card${dim}">`);
-  parts.push(
-    `        <h2 class="card-need"><a href="${u('/apps/' + esc(app.slug) + '/')}">${esc(app.need)}</a></h2>`
-  );
-  parts.push('        <p class="card-meta">');
-  parts.push(`          <span class="appname">${esc(app.name)}</span>`);
-  parts.push('          ' + badge(app.status));
-  if (created) parts.push(`          <time datetime="${esc(app.created)}">${esc(created)}</time>`);
-  parts.push('        </p>');
-
-  if (meta.note) parts.push(`        <p class="status-note">${esc(meta.note)}</p>`);
-  if (app.description) parts.push(`        <p class="desc">${esc(app.description)}</p>`);
-
-  parts.push('        <p class="card-actions">');
-  if (app.liveUrl && app.status === 'broken') {
-    // Don't hand someone a big button to a thing we know is broken.
-    parts.push(
-      `          <a class="secondary" href="${esc(app.liveUrl)}" rel="nofollow">Open it anyway &rarr;</a>`
-    );
-  } else if (app.liveUrl && app.status !== 'retired') {
-    parts.push('          ' + useLink(app));
-  } else if (!app.liveUrl && app.status === 'live') {
-    parts.push('          <span class="hint">No live link on file yet</span>');
+  parts.push(`      <li class="tile${muted}">`);
+  parts.push(`        <h2><a href="${esc(href)}"${rel}>${esc(app.name)}</a></h2>`);
+  parts.push(`        <p class="need">${esc(app.need)}</p>`);
+  parts.push('        <p class="foot">');
+  parts.push('          ' + chip(app.status));
+  if (usable) {
+    parts.push(`          <a class="details" href="${esc(detailPath(app))}">Details</a>`);
   }
-  parts.push(`          <a class="secondary" href="${u('/apps/' + esc(app.slug) + '/')}">What it does &amp; what it can&#39;t</a>`);
   parts.push('        </p>');
   parts.push('      </li>');
   return parts.join('\n');
 }
 
 function emptyState() {
-  return `    <section class="empty">
-      <p class="eyebrow">The catalog is empty</p>
-      <h1>Nothing here yet. The first apps are being built right now.</h1>
-      <p>Voyeur is a library of small, free fashion tools &mdash; the things a spreadsheet can&#39;t solve. What size am I in a brand I&#39;ve never bought from. What is this coat actually costing me per wear. Is that resale price good. Where did the discontinued one go.</p>
-      <p>Every tool in it is found, researched, built, broken, fixed and shipped by an autonomous pipeline. No human writes the code, picks the ideas, or approves the deploys. A cycle that ships nothing is a normal cycle &mdash; an empty shelf is cheaper than a shelf of filler. So this page fills slowly, and everything that lands on it works.</p>
-      <p class="eyebrow" style="margin-top:2rem">What it is scouting for</p>
-      <ul class="scouting">
-        <li>Your size in a brand you have never bought from</li>
-        <li>What a garment really costs you, per wear</li>
-        <li>Whether a resale price is a good one</li>
-        <li>Where a discontinued piece went</li>
-      </ul>
-      <p class="cta-row">
-        <a class="use" href="${u('/about/')}">How this works &rarr;</a>
-        <a class="secondary" href="${REPO_URL}">Watch it happen on GitHub</a>
-      </p>
-    </section>`;
+  return `    <div class="card">
+      <p>No apps yet — the first ones are being built.</p>
+      <p class="actions"><a class="btn" href="${REPO_URL}">Follow along on GitHub</a></p>
+    </div>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -599,26 +506,19 @@ function emptyState() {
 // ---------------------------------------------------------------------------
 
 function renderIndex(apps) {
-  let body;
-  if (apps.length === 0) {
-    body = emptyState();
-  } else {
-    const liveCount = apps.filter((a) => a.status === 'live').length;
-    const count =
-      apps.length +
-      (apps.length === 1 ? ' app' : ' apps') +
-      (liveCount === apps.length ? '' : ' · ' + liveCount + ' live');
-    body = `    <p class="count">${esc(count)} &middot; newest first</p>
-    <ul class="catalog">
-${apps.map(renderCard).join('\n')}
+  const body =
+    apps.length === 0
+      ? emptyState()
+      : `    <ul class="grid">
+${apps.map(renderTile).join('\n')}
     </ul>`;
-  }
 
   return layout({
-    title: 'Voyeur — free fashion tools, built by an autonomous AI',
+    title: 'Voyeur — free fashion tools',
     description:
-      'A catalog of small, free fashion tools — sizing, wardrobe, resale, discontinued pieces. Every one found, built, tested and shipped by an autonomous AI pipeline. No accounts, no fees.',
+      'A catalog of small, free fashion tools. Built autonomously. No accounts, no fees.',
     canonicalPath: '/',
+    wide: true,
     body: body,
   });
 }
@@ -631,28 +531,19 @@ function renderAppPage(app) {
 
   const parts = [];
   parts.push(`    <p class="crumb"><a href="${u('/')}">&larr; All apps</a></p>`);
-  parts.push('    <article>');
-  parts.push(`      <h1 class="need">${esc(app.need)}</h1>`);
-  parts.push('      <p class="detail-meta">');
-  parts.push(`        <span class="appname">${esc(app.name)}</span>`);
-  parts.push('        ' + badge(app.status));
-  parts.push('      </p>');
+  parts.push('    <article class="card">');
+  parts.push(`      <h1>${esc(app.name)}</h1>`);
+  parts.push(`      <p class="subtitle">${esc(app.need)}</p>`);
+  parts.push('      <p class="meta">' + chip(app.status) + (meta.note ? ` <span>${esc(meta.note)}</span>` : '') + '</p>');
 
-  if (meta.note) parts.push(`      <p class="status-note">${esc(meta.note)}</p>`);
-
-  parts.push('      <p class="hero-actions">');
+  parts.push('      <p class="actions">');
   if (app.liveUrl && app.status === 'broken') {
-    parts.push(
-      `        <a class="secondary" href="${esc(app.liveUrl)}" rel="nofollow">Open it anyway &rarr;</a>`
-    );
-    parts.push('        <span class="hint">It is known to be broken. Expect it not to work.</span>');
+    parts.push(`        <a class="btn ghost" href="${esc(app.liveUrl)}" rel="nofollow">Open it anyway</a>`);
   } else if (app.liveUrl && app.status !== 'retired') {
-    parts.push('        ' + useLink(app));
-    parts.push('        <span class="hint">Free, no account, works on a phone</span>');
-  } else if (app.status === 'retired') {
-    parts.push('        <span class="hint">This app is retired. The source is still here.</span>');
+    const rel = app.status === 'live' ? '' : ' rel="nofollow"';
+    parts.push(`        <a class="btn" href="${esc(app.liveUrl)}"${rel}>Open the app</a>`);
   } else {
-    parts.push('        <span class="hint">No live link yet &mdash; the source is below.</span>');
+    parts.push('        <span class="hint">No live link. The source is below.</span>');
   }
   parts.push('      </p>');
 
@@ -663,29 +554,27 @@ function renderAppPage(app) {
     parts.push('      </section>');
   }
 
-  // Limitations sit high on the page on purpose. See docs/PRINCIPLES.md.
-  parts.push('      <section class="limits">');
-  parts.push('        <h2>What it can&#39;t do</h2>');
+  // Required by docs/PRINCIPLES.md: every app states what it can't do.
+  parts.push('      <section>');
+  parts.push('        <h2>Limitations</h2>');
   if (app.limitations.length > 0) {
-    parts.push('        <ul>');
+    parts.push('        <ul class="list">');
     for (const l of app.limitations) parts.push(`          <li>${esc(l)}</li>`);
     parts.push('        </ul>');
   } else {
-    parts.push(
-      '        <p>This app has not declared its limitations. Every app has them, so treat that as a gap in the record rather than a clean bill of health.</p>'
-    );
+    parts.push('        <p>Not declared. Treat that as a gap in the record, not a clean bill of health.</p>');
   }
   parts.push('      </section>');
 
   if (app.evidence.length > 0) {
     parts.push('      <section>');
-    parts.push('        <h2>Who asked for this</h2>');
-    parts.push('        <ul class="evidence">');
+    parts.push('        <h2>Who asked</h2>');
+    parts.push('        <ul class="plain">');
     for (const e of app.evidence) {
       if (e.href) {
         parts.push(
           `          <li><a href="${esc(e.href)}" rel="nofollow noopener">${esc(e.text)}</a>` +
-            (e.note ? `<span class="note">${esc(e.note)}</span>` : '') +
+            (e.note ? ` <span class="note">${esc(e.note)}</span>` : '') +
             '</li>'
         );
       } else {
@@ -697,48 +586,22 @@ function renderAppPage(app) {
   }
 
   parts.push('      <section>');
-  parts.push('        <h2>Run it yourself</h2>');
-  if (app.localRun) {
-    parts.push(`        <pre><code>${esc(app.localRun)}</code></pre>`);
-    parts.push(
-      '        <p>Clone the repo and run that. Everything happens in your browser, so you can run it with the network off and check that nothing leaves your machine.</p>'
-    );
-  } else {
-    parts.push(
-      '        <p>No local-run command on file. The source is below &mdash; most of these are static and run with any local web server.</p>'
-    );
-  }
-  parts.push(`        <p><a class="secondary" href="${esc(sourceUrl)}">Source on GitHub &rarr;</a></p>`);
+  parts.push('        <h2>Run locally</h2>');
+  if (app.localRun) parts.push(`        <pre><code>${esc(app.localRun)}</code></pre>`);
+  parts.push(`        <p><a href="${esc(sourceUrl)}">Source on GitHub</a></p>`);
   parts.push('      </section>');
 
-  parts.push('      <section>');
-  parts.push('        <h2>Details</h2>');
-  parts.push('        <dl class="facts">');
-  parts.push(`          <div><dt>Status</dt><dd>${esc(meta.label)}</dd></div>`);
-  if (created) parts.push(`          <div><dt>Built</dt><dd><time datetime="${esc(app.created)}">${esc(created)}</time></dd></div>`);
-  if (updated) parts.push(`          <div><dt>Updated</dt><dd><time datetime="${esc(app.updated)}">${esc(updated)}</time></dd></div>`);
-  parts.push(`          <div><dt>Cost</dt><dd>Free, forever. No account, no key, no limits.</dd></div>`);
-  parts.push(`          <div><dt>License</dt><dd>${esc(app.license)}</dd></div>`);
-  parts.push('        </dl>');
-  parts.push('      </section>');
-
-  if (app.tech.length > 0) {
-    parts.push('      <section>');
-    parts.push('        <h2>Built with</h2>');
-    parts.push('        <ul class="tags">');
-    for (const t of app.tech) parts.push(`          <li>${esc(t)}</li>`);
-    parts.push('        </ul>');
-    parts.push('      </section>');
-  }
-
+  const facts = [];
+  if (created) facts.push(`Built <time datetime="${esc(app.created)}">${esc(created)}</time>`);
+  if (updated) facts.push(`updated <time datetime="${esc(app.updated)}">${esc(updated)}</time>`);
+  facts.push(esc(app.license));
+  parts.push(`      <p class="dates">${facts.join(' &middot; ')}</p>`);
   parts.push('    </article>');
 
-  const desc =
-    (app.description || app.need) +
-    ' Free, no account. Built and shipped by an autonomous AI pipeline.';
+  const desc = app.description || app.need;
 
   return layout({
-    title: app.name + ' — ' + app.need + ' | Voyeur',
+    title: app.name + ' — Voyeur',
     description: desc.length > 300 ? desc.slice(0, 297) + '…' : desc,
     canonicalPath: '/apps/' + app.slug + '/',
     body: parts.join('\n'),
@@ -746,72 +609,58 @@ function renderAppPage(app) {
 }
 
 function renderAbout() {
-  const body = `    <div class="prose">
-      <p class="eyebrow">How this works</p>
-      <h1>Nobody is writing these apps.</h1>
-      <p class="lede">Voyeur is a library of small fashion tools that an AI finds the need for, builds, tries to break, fixes, and ships &mdash; with no human in the loop at any step.</p>
+  const body = `    <div class="card">
+      <h1>About</h1>
+      <p class="subtitle">Voyeur is a catalog of small, free fashion tools. Every app runs in your browser &mdash; no accounts, no fees, no tracking.</p>
+      <p class="subtitle">An autonomous Claude Code pipeline runs the whole thing: it finds the need, builds the app, tries to break it, and ships it. No human writes the code or approves the deploys.</p>
 
-      <p>Every few hours a fresh Claude Code session wakes up in <a href="${REPO_URL}">this repository</a> with no memory of the last one. It reads the docs, reads the state files the previous sessions left behind, and runs one cycle. Then it commits, pushes, and dies. Nothing carries over except what it wrote down.</p>
+      <section>
+        <h2>One cycle</h2>
+        <ul class="list">
+          <li><b>Scout</b> &mdash; read public threads for fashion problems people wish had software.</li>
+          <li><b>Select</b> &mdash; pick at most one. Zero is a normal answer.</li>
+          <li><b>Research</b> &mdash; find the simplest implementation that is free to run forever.</li>
+          <li><b>Plan</b> &mdash; split it into modules with fixed interfaces.</li>
+          <li><b>Build</b> &mdash; parallel agents, one per module.</li>
+          <li><b>Adversarial loop</b> &mdash; reviewers, breakers and simulated first-time users, until it holds.</li>
+          <li><b>Deploy</b> &mdash; ship it, then drive the live URL on a phone viewport to prove it works.</li>
+          <li><b>Record</b> &mdash; write the run log, commit, push.</li>
+        </ul>
+      </section>
 
-      <h2>One cycle</h2>
-      <ol class="steps">
-        <li><b>Scout</b> Mine public conversation &mdash; forums, app-store reviews, comment threads &mdash; for fashion problems people say they wish had software. It reads the replies, not just the wish: &ldquo;does this exist?&rdquo; answered with a link is a solved problem. Answered with silence is a lead. It also re-checks apps already on the shelf; a broken one outranks any new idea.</li>
-        <li><b>Select</b> Reduce the candidates to exactly one, weighing how many independent people asked, whether one session can finish it, and whether it can be run for free forever. Zero is a valid answer, and it is the usual answer.</li>
-        <li><b>Research</b> Find the simplest complete implementation that uses the best technique currently available &mdash; and check every dependency&#39;s license and cost. If the research shows the app can&#39;t meet the constraints, it dies here, with the reasoning written down so a future session doesn&#39;t spend the same hours.</li>
-        <li><b>Plan</b> Decompose the build into modules with exact interfaces, so several agents can work at once without colliding.</li>
-        <li><b>Build</b> Launch parallel implementation agents, one per module, and integrate between waves.</li>
-        <li><b>Adversarial loop</b> Turn three kinds of adversary loose on the real build at the same time: code reviewers hunting correctness, license and accidental-cost problems; breakers feeding it empty inputs, 40MB photos, a photo of a dog, a dead network, a 375px screen; and simulated first-time users driving the actual running app with no instructions, to see where they give up. An orchestrator triages, fixes, and runs the loop again. Two or three rounds is normal. A clean first round means the adversaries were too gentle.</li>
-        <li><b>Deploy</b> Ship it, then prove it shipped &mdash; drive the live URL end to end, on a mobile viewport, before calling it live.</li>
-        <li><b>Record</b> Write the run log, update the state files, commit, push. The log is the only channel that exists; there is nobody to notify.</li>
-      </ol>
+      <section>
+        <h2>Honesty</h2>
+        <p>Every app lists its limitations; broken apps are labeled broken.</p>
+      </section>
 
-      <p>If the orchestrator isn&#39;t genuinely satisfied at step six, nothing ships. A cycle that ships nothing is a successful cycle. The catalog&#39;s value is its hit rate, not its length &mdash; an empty week is cheap, a bad app is permanent.</p>
-
-      <h2>The honesty stance</h2>
-      <p>An autonomous system that markets itself is dangerous, so this one is built to undersell instead.</p>
-      <ul>
-        <li><b>Every app lists what it can&#39;t do</b>, on its own page, above the fold rather than buried at the bottom. An empty limitations list is treated as a gap in the record, not a clean bill of health.</li>
-        <li><b>Accuracy is stated plainly, including when it&#39;s poor.</b> &ldquo;Rough estimate, &plusmn;3cm, calibrate with a known object&rdquo; is a usable tool. &ldquo;Precise measurements from a photo&rdquo; is a lie, and you would find out in one try.</li>
-        <li><b>Broken apps are labelled broken</b> and stay in the catalog, dimmed, with a note. A dead link you discover yourself is worse than an admission you read first.</li>
-        <li><b>Retired apps say so</b> and keep their source and their run log.</li>
-      </ul>
-
-      <h2>What it costs, and why that matters</h2>
-      <p>Nothing, at any scale, forever. No paid APIs, no keys, no databases, no metered inference, no per-user fees &mdash; and no rate limits, because rate-limiting users to protect a budget is just a bill in disguise. Apps run in your browser: your photos and your measurements stay on your device, which you can verify by running an app locally with the network switched off.</p>
-      <p>There is no monetisation at all. No ads, no affiliate links, no email capture, no analytics that identify anyone, no third-party scripts. That is not modesty &mdash; a system with no human supervision cannot be trusted with a revenue incentive, and a zero-cost system is one that can keep running unattended without a bill arriving for nobody to pay.</p>
-
-      <h2>Read the record</h2>
-      <p>All of it is public, including the failures.</p>
-      <ul>
-        <li><a href="${REPO_TREE}/pipeline/state/runs">Run logs</a> &mdash; one per cycle: what was scouted, what was rejected and why, what the adversarial agents caught, how many rounds it took.</li>
-        <li><a href="${REPO_TREE}/pipeline/state">State files</a> &mdash; the backlog, what shipped, and what was declined with the reasoning.</li>
-        <li><a href="${REPO_TREE}/docs">The docs</a> &mdash; the principles, the pipeline and the constraints each session reads before it does anything.</li>
-        <li><a href="${REPO_URL}">The repository</a> &mdash; every app, MIT licensed, and the commit history of a machine building them.</li>
-      </ul>
+      <section>
+        <h2>The record</h2>
+        <ul class="plain">
+          <li><a href="${REPO_TREE}/pipeline/state/runs">Run logs</a> &mdash; one per cycle, including the failures.</li>
+          <li><a href="${REPO_TREE}/docs">Docs</a> &mdash; the principles and the pipeline.</li>
+          <li><a href="${REPO_URL}">Repository</a> &mdash; every app, MIT licensed.</li>
+        </ul>
+      </section>
     </div>`;
 
   return layout({
-    title: 'How this works — Voyeur',
+    title: 'About — Voyeur',
     description:
-      'How Voyeur builds itself: an autonomous pipeline scouts public demand, researches, builds with parallel agents, runs an adversarial loop until an orchestrator is satisfied, then deploys. Every few hours, no human involved.',
+      'Voyeur is a catalog of small, free fashion tools built by an autonomous pipeline. How a cycle works, and where to read the logs.',
     canonicalPath: '/about/',
     body: body,
   });
 }
 
 function render404() {
-  const body = `    <div class="prose">
-      <p class="eyebrow">404</p>
-      <h1>That page isn&#39;t here.</h1>
-      <p>It may have been retired, or it may never have existed. The catalog is the reliable list.</p>
-      <p class="cta-row">
-        <a class="use" href="${u('/')}">See the catalog &rarr;</a>
-        <a class="secondary" href="${u('/about/')}">How this works</a>
-      </p>
+  const body = `    <div class="card">
+      <h1>Not found</h1>
+      <p class="subtitle">That page isn&#39;t here.</p>
+      <p class="actions"><a class="btn" href="${u('/')}">See the catalog</a></p>
     </div>`;
   return layout({
     title: 'Not found — Voyeur',
-    description: 'That page is not here. Browse the Voyeur catalog of free fashion tools instead.',
+    description: 'That page is not here. Browse the Voyeur catalog instead.',
     canonicalPath: '',
     body: body,
   });
