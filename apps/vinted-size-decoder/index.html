@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What do Vinted's S/M/L sizes actually mean? — Vinted Size Decoder</title>
+<meta name="description" content="Vinted replaced UK numeric sizes with S/M/L ranges. Find which bucket your UK size falls in, which boxes to actually tick so you stop missing listings, and what to write when you sell. Free, no account, works offline.">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="index,follow">
+<meta property="og:title" content="What do Vinted's S/M/L sizes actually mean?">
+<meta property="og:description" content="A plain decoder for Vinted's UK womenswear size buckets: what S, M, L map to, which boxes to tick, and how to list so buyers can find you.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23faf8f5'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='19' font-weight='600' text-anchor='middle' fill='%239a3d18'%3EM%3C/text%3E%3C/svg%3E">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg:#faf8f5;
+  --panel:#f3efe9;
+  --ink:#17140f;
+  --ink-soft:#3f382f;
+  --muted:#6f665b;
+  --rule:#ddd5c9;
+  --rule-strong:#c6bcac;
+  --accent:#9a3d18;
+  --accent-soft:rgba(154,61,24,.08);
+  --serif:ui-serif,Georgia,"Iowan Old Style","Times New Roman",Times,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#100f0e;
+    --panel:#1a1817;
+    --ink:#f4efe8;
+    --ink-soft:#d5cdc2;
+    --muted:#9a9084;
+    --rule:#2e2a26;
+    --rule-strong:#463f38;
+    --accent:#e08a5f;
+    --accent-soft:rgba(224,138,95,.12);
+  }
+}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:17px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:44rem;margin:0 auto;padding:0 1.25rem}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:.18em}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
+
+/* masthead ------------------------------------------------------------- */
+.masthead{border-bottom:1px solid var(--rule);padding:1.4rem 0 1.2rem}
+.wordmark{
+  display:inline-block;font-family:var(--serif);font-size:1.15rem;font-weight:600;
+  letter-spacing:.26em;text-transform:uppercase;color:var(--muted);
+  text-decoration:none;margin:0;
+}
+.wordmark:hover{color:var(--accent)}
+
+main{padding:2rem 0 2.5rem}
+
+h1{font-family:var(--serif);font-size:1.75rem;line-height:1.18;letter-spacing:-.015em;margin:0 0 .8rem;font-weight:600}
+.lede{font-family:var(--serif);font-size:1.15rem;line-height:1.45;color:var(--ink-soft);margin:0 0 1.5rem}
+.eyebrow{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 .75rem;font-weight:600}
+h2{font-family:var(--serif);font-size:1.3rem;line-height:1.25;margin:0 0 .8rem;font-weight:600;letter-spacing:-.01em}
+h3{font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 .7rem;font-weight:600}
+p{margin:0 0 1rem;color:var(--ink-soft)}
+section{margin:0 0 2.5rem}
+
+/* status banner --------------------------------------------------------- */
+.banner{border-left:2px solid var(--accent);padding:.1rem 0 .1rem 1rem;margin:0 0 1.25rem}
+.banner p{margin:0 0 .5rem;font-size:.93rem;color:var(--ink-soft)}
+.banner p:last-child{margin-bottom:0}
+details.timeline{margin:0 0 2rem;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+details.timeline summary{
+  cursor:pointer;list-style:none;padding:.85rem 0;
+  font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;
+}
+details.timeline summary::-webkit-details-marker{display:none}
+details.timeline summary::after{content:" +";color:var(--accent)}
+details.timeline[open] summary::after{content:" \2212";}
+details.timeline summary:hover{color:var(--accent)}
+.tl{list-style:none;margin:0;padding:0 0 1rem}
+.tl li{border-top:1px solid var(--rule);padding:.75rem 0;font-size:.93rem;color:var(--ink-soft)}
+.tl b{display:block;color:var(--ink);font-weight:600;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.15rem}
+
+/* tool ------------------------------------------------------------------ */
+.tool{border:1px solid var(--rule-strong);background:var(--panel);padding:1.15rem;margin:0 0 2.5rem}
+.modes{display:flex;gap:0;margin:0 0 1.25rem;border:1px solid var(--rule-strong);background:var(--bg)}
+.modes button{
+  flex:1 1 50%;min-height:48px;padding:.6rem .5rem;border:0;background:transparent;
+  font-family:var(--sans);font-size:.95rem;font-weight:600;color:var(--muted);cursor:pointer;
+}
+.modes button + button{border-left:1px solid var(--rule-strong)}
+.modes button[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
+.modes button:hover:not([aria-pressed="true"]){color:var(--accent)}
+
+.picker-label{font-size:.95rem;color:var(--ink);font-weight:600;margin:0 0 .7rem;display:block}
+.sizes{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin:0 0 1.15rem}
+.sizes button{
+  min-height:48px;padding:.5rem .25rem;cursor:pointer;
+  border:1px solid var(--rule-strong);background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:1.05rem;font-weight:600;line-height:1.2;
+}
+.sizes button:hover{border-color:var(--accent);color:var(--accent)}
+.sizes button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.sizes .uk{display:block;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;opacity:.6}
+
+.result{border-top:1px solid var(--rule-strong);padding-top:1.15rem}
+.result .placeholder{margin:0;color:var(--muted);font-size:.95rem}
+.answer{font-family:var(--serif);font-size:1.2rem;line-height:1.35;color:var(--ink);margin:0 0 1rem}
+.answer .big{
+  display:inline-block;background:var(--accent);color:var(--bg);
+  padding:.05em .4em;font-weight:600;
+}
+.callout{background:var(--accent-soft);border-left:2px solid var(--accent);padding:.7rem .85rem;margin:0 0 1.15rem;font-size:.93rem;color:var(--ink-soft)}
+.callout strong{color:var(--ink)}
+.block{margin:0 0 1.15rem}
+.block:last-child{margin-bottom:0}
+ul.ticks{list-style:none;margin:0 0 .7rem;padding:0}
+ul.ticks li{border-top:1px solid var(--rule);padding:.6rem 0;font-size:.95rem;color:var(--ink-soft)}
+ul.ticks li:first-child{border-top:0}
+ul.ticks .box{
+  display:inline-block;min-width:4.6em;text-align:center;margin-right:.6rem;
+  border:1px solid var(--rule-strong);background:var(--bg);
+  font-weight:600;color:var(--ink);font-size:.85rem;padding:.15rem .45rem;
+}
+ul.ticks li.primary .box{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+ul.ticks .why{display:block;color:var(--muted);font-size:.88rem;margin-top:.25rem}
+ul.plain{margin:0 0 1rem;padding-left:1.1rem;color:var(--ink-soft);font-size:.95rem}
+ul.plain li{margin:0 0 .45rem}
+.note{font-size:.88rem;color:var(--muted);margin:0}
+
+pre{
+  margin:0 0 .6rem;padding:.8rem .9rem;background:var(--bg);
+  border:1px solid var(--rule-strong);overflow-x:auto;white-space:pre-wrap;word-break:break-word;
+  font-family:var(--mono);font-size:.82rem;line-height:1.55;color:var(--ink-soft);
+}
+.copy{
+  min-height:44px;padding:.5rem 1rem;cursor:pointer;
+  border:1px solid var(--accent);background:transparent;color:var(--accent);
+  font-family:var(--sans);font-size:.9rem;font-weight:600;
+}
+.copy:hover{background:var(--accent);color:var(--bg)}
+
+.nojs{border:1px solid var(--rule-strong);background:var(--panel);padding:1rem 1.15rem;margin:0 0 2.5rem}
+.nojs p{margin:0;font-size:.93rem}
+.js .nojs{display:none}
+.js-only{display:none}
+.js .js-only{display:block}
+
+/* tables ---------------------------------------------------------------- */
+.tablewrap{overflow-x:auto;margin:0 0 1rem;border:1px solid var(--rule)}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+caption{
+  caption-side:top;text-align:left;padding:.75rem .85rem;
+  font-size:.78rem;color:var(--muted);line-height:1.45;border-bottom:1px solid var(--rule);
+}
+caption b{color:var(--ink-soft);display:block;font-size:.85rem;margin-bottom:.15rem}
+th,td{padding:.6rem .7rem;text-align:left;border-top:1px solid var(--rule);vertical-align:top}
+thead th{
+  border-top:0;background:var(--panel);color:var(--muted);font-weight:600;
+  font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;line-height:1.35;
+}
+tbody th{font-weight:600;color:var(--ink);font-family:var(--serif);font-size:1.05rem}
+td.na{color:var(--muted)}
+.conf{display:block;font-size:.78rem;color:var(--muted);margin-top:.1rem}
+
+/* checklist ------------------------------------------------------------- */
+.checklist{list-style:none;margin:0 0 1rem;padding:0;border-top:1px solid var(--rule)}
+.checklist li{border-bottom:1px solid var(--rule);padding:.7rem 0 .7rem 1.6rem;position:relative;color:var(--ink-soft);font-size:.95rem}
+.checklist li::before{content:"\2713";position:absolute;left:0;top:.7rem;color:var(--accent);font-weight:700}
+
+/* footer ---------------------------------------------------------------- */
+footer{border-top:1px solid var(--rule);padding:1.75rem 0 3rem;font-size:.82rem;color:var(--muted)}
+footer p{margin:0 0 .45rem;color:var(--muted)}
+footer a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--rule-strong)}
+footer a:hover{color:var(--accent);border-color:var(--accent)}
+
+@media (min-width:40rem){
+  body{font-size:18px}
+  .wrap{padding:0 2rem}
+  main{padding:3rem 0 3.5rem}
+  h1{font-size:2.3rem}
+  .lede{font-size:1.3rem}
+  h2{font-size:1.5rem}
+  .tool{padding:1.6rem}
+  .sizes{grid-template-columns:repeat(6,1fr)}
+  .answer{font-size:1.35rem}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<script>document.documentElement.className+=" js";</script>
+
+<header class="masthead">
+  <div class="wrap">
+    <a class="wordmark" href="https://voyeur-catalog-avis-projects-b828fa0e.vercel.app">Voyeur</a>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+  <h1>What do Vinted&#39;s S/M/L sizes actually mean?</h1>
+  <p class="lede">Vinted swapped UK numeric sizes for letter buckets, so ticking &ldquo;14&rdquo; now hands you 12s. Here is what the letters map to, which boxes to tick so you stop missing things, and what to write when you sell.</p>
+
+  <div class="banner">
+    <p>Based on Vinted&#39;s documented <b>Nov 2025</b> sizing change for UK womenswear. Vinted has been changing this system through 2026 &mdash; accounts may see different layouts.</p>
+    <p>The tick-adjacent-buckets and check-measurements advice holds either way.</p>
+  </div>
+
+  <details class="timeline">
+    <summary>What changed, and when</summary>
+    <ul class="tl">
+      <li><b>10 Nov 2025 &mdash; the change</b>UK womenswear sizes were collapsed into letter buckets with ranges (&ldquo;S / UK 8&ndash;10&rdquo;), and existing listings were auto-converted. Widely reported by users; this is the system this page encodes.</li>
+      <li><b>~Jan 2026 &mdash; a partial reversion, unconfirmed</b>Some users reported UK numeric sizes coming back. We could not confirm it landed, or for whom. Treat it as &ldquo;some people may see numbers again&rdquo;.</li>
+      <li><b>~Jul 2026 &mdash; a per-account sizing picker, rolling out</b>Reports of a per-account &ldquo;sizing standard&rdquo; setting. If that is on your account, two people can be looking at the same listing and see different size labels. Another reason to write the number in the description.</li>
+    </ul>
+  </details>
+
+  <div class="nojs">
+    <p><b>The picker below needs JavaScript.</b> It is switched off or blocked, so you are getting the reference tables instead &mdash; they have the same mapping in them, and they are further down this page.</p>
+  </div>
+
+  <!-- ------------------------------------------------------------------ -->
+  <!-- THE TOOL (enhancement; the tables below are the no-JS fallback)     -->
+  <!-- ------------------------------------------------------------------ -->
+  <div class="tool js-only" id="tool">
+    <div class="modes" role="group" aria-label="Are you buying or selling?">
+      <button type="button" id="mode-buy" aria-pressed="true">I&#39;m buying</button>
+      <button type="button" id="mode-sell" aria-pressed="false">I&#39;m selling</button>
+    </div>
+
+    <span class="picker-label" id="picker-label">Your usual UK size</span>
+    <div class="sizes" id="sizes" role="group" aria-labelledby="picker-label"></div>
+
+    <div class="result" id="result" aria-live="polite">
+      <p class="placeholder">Pick a size above.</p>
+    </div>
+  </div>
+
+  <section>
+    <h2>Whatever the label says, check the measurements</h2>
+    <p>This is the part that actually works, on any version of Vinted&#39;s UI. Letters and numbers are both the seller&#39;s guess; a tape measure is not.</p>
+    <ul class="checklist">
+      <li>Measure a garment you already own and love the fit of. That is your reference, not a size label.</li>
+      <li>Ask the seller for <b>pit to pit</b> (armpit to armpit, laid flat), <b>shoulder to hem</b>, and <b>waist laid flat</b> for anything fitted.</li>
+      <li>Ask for a photo of the size tag. It settles what the garment actually is, whatever bucket the listing sits in.</li>
+      <li>Remember laid-flat measurements are half the body measurement &mdash; a 52cm pit to pit is a 104cm chest.</li>
+      <li>If a seller won&#39;t measure, that is information too. Plenty of others will.</li>
+    </ul>
+  </section>
+
+  <!-- ------------------------------------------------------------------ -->
+  <!-- REFERENCE TABLES — plain HTML, no JS required                       -->
+  <!-- ------------------------------------------------------------------ -->
+  <section id="table">
+    <h2>The full mapping</h2>
+    <p>Two systems, side by side. Notice that the letters moved: under the old system <b>M</b> meant a UK 10; under the new one it means a UK 12&ndash;14. Same letter, different garment.</p>
+
+    <div class="tablewrap">
+      <table>
+        <caption>
+          <b>Vinted UK womenswear letter sizes &mdash; old system vs new</b>
+          New system as documented from Vinted&#39;s change of 10 Nov 2025. Old system as used before that date. Compiled 9 Aug 2026 from multiple independent user reports, not from Vinted documentation.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Letter</th>
+            <th scope="col">New: UK sizes in the bucket <span class="conf">from 10 Nov 2025</span></th>
+            <th scope="col">Old: the single UK size it meant <span class="conf">before 10 Nov 2025</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">XS</th><td>UK 4&ndash;6 <span class="conf">moderate confidence</span></td><td>UK 6 <span class="conf">less certain</span></td></tr>
+          <tr><th scope="row">S</th><td>UK 8&ndash;10 <span class="conf">high confidence</span></td><td>UK 8</td></tr>
+          <tr><th scope="row">M</th><td>UK 12&ndash;14 <span class="conf">high confidence</span></td><td>UK 10</td></tr>
+          <tr><th scope="row">L</th><td>UK 16&ndash;18 <span class="conf">high confidence</span></td><td>UK 12</td></tr>
+          <tr><th scope="row">XL</th><td>UK 20&ndash;22 <span class="conf">moderate&ndash;high confidence</span></td><td>UK 14</td></tr>
+          <tr><th scope="row">XXL</th><td>UK 24&ndash;26 <span class="conf">high confidence</span></td><td>UK 16</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <caption>
+          <b>Look up your own UK size</b>
+          Same data, read the other way round. &ldquo;Also tick&rdquo; is our advice, not Vinted&#39;s: auto-converted listings are often out by one bucket, and sellers of in-between garments guess.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Your UK size</th>
+            <th scope="col">New bucket</th>
+            <th scope="col">Also tick</th>
+            <th scope="col">Old label you may still see</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">UK 4</th><td>XS (UK 4&ndash;6)</td><td class="na">nothing smaller is documented</td><td class="na">not documented</td></tr>
+          <tr><th scope="row">UK 6</th><td>XS (UK 4&ndash;6)</td><td>S (UK 8&ndash;10)</td><td>XS / 6 <span class="conf">less certain</span></td></tr>
+          <tr><th scope="row">UK 8</th><td>S (UK 8&ndash;10)</td><td>XS (UK 4&ndash;6)</td><td>S / 8</td></tr>
+          <tr><th scope="row">UK 10</th><td>S (UK 8&ndash;10)</td><td>M (UK 12&ndash;14)</td><td>M / 10</td></tr>
+          <tr><th scope="row">UK 12</th><td>M (UK 12&ndash;14)</td><td>S (UK 8&ndash;10)</td><td>L / 12</td></tr>
+          <tr><th scope="row">UK 14</th><td>M (UK 12&ndash;14)</td><td>L (UK 16&ndash;18)</td><td>XL / 14</td></tr>
+          <tr><th scope="row">UK 16</th><td>L (UK 16&ndash;18)</td><td>M (UK 12&ndash;14)</td><td>XXL / 16</td></tr>
+          <tr><th scope="row">UK 18</th><td>L (UK 16&ndash;18)</td><td>XL (UK 20&ndash;22)</td><td class="na">not documented</td></tr>
+          <tr><th scope="row">UK 20</th><td>XL (UK 20&ndash;22)</td><td>L (UK 16&ndash;18)</td><td class="na">not documented</td></tr>
+          <tr><th scope="row">UK 22</th><td>XL (UK 20&ndash;22)</td><td>XXL (UK 24&ndash;26)</td><td class="na">not documented</td></tr>
+          <tr><th scope="row">UK 24</th><td>XXL (UK 24&ndash;26)</td><td>XL (UK 20&ndash;22)</td><td class="na">not documented</td></tr>
+          <tr><th scope="row">UK 26</th><td>XXL (UK 24&ndash;26)</td><td class="na">nothing larger is documented</td><td class="na">not documented</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>What this table does not cover, and why</h3>
+    <ul class="plain">
+      <li><b>No EU or US column.</b> Vinted-specific EU/US labels for these buckets could not be verified, and generic conversions between the three systems are disputed. A wrong column would be worse than no column.</li>
+      <li><b>Womenswear tops, dresses and outerwear only.</b> Jeans, trousers and shoes appear to have kept their numeric sizing &mdash; that is inferred from the absence of complaints about them, not from anything Vinted published.</li>
+      <li><b>No menswear, no kids&#39;.</b> Not verified, so not shown.</li>
+      <li><b>No sizes above XXL or below XS.</b> We saw claims of further buckets but could not corroborate them, so they are not here.</li>
+      <li><b>No per-country variation.</b> This is the UK womenswear view. If you are shopping another country&#39;s Vinted, assume none of the above holds.</li>
+    </ul>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Not affiliated with Vinted. Free, no account, nothing leaves your browser.</p>
+    <p><a href="https://voyeur-catalog-avis-projects-b828fa0e.vercel.app">More Voyeur tools</a> &middot; <a href="https://github.com/avikabra/voyeur">Source on GitHub</a></p>
+    <p>Encoded from user reports of Vinted&#39;s Nov 2025 change, compiled 9 Aug 2026. If Vinted has changed it again, trust the measurements over this page.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------------------------------------------------------------- data */
+  /* New system, documented from Vinted's change of 10 Nov 2025.           */
+  var BUCKETS = [
+    { key: 'XS',  range: 'UK 4–6',   lo: 4,  hi: 6  },
+    { key: 'S',   range: 'UK 8–10',  lo: 8,  hi: 10 },
+    { key: 'M',   range: 'UK 12–14', lo: 12, hi: 14 },
+    { key: 'L',   range: 'UK 16–18', lo: 16, hi: 18 },
+    { key: 'XL',  range: 'UK 20–22', lo: 20, hi: 22 },
+    { key: 'XXL', range: 'UK 24–26', lo: 24, hi: 26 }
+  ];
+
+  /* Old system, pre-10-Nov-2025: one letter, one size, shown combined. */
+  var OLD = {
+    6:  { label: 'XS/6', letter: 'XS', uncertain: true },
+    8:  { label: 'S/8',  letter: 'S'  },
+    10: { label: 'M/10', letter: 'M'  },
+    12: { label: 'L/12', letter: 'L'  },
+    14: { label: 'XL/14', letter: 'XL' },
+    16: { label: 'XXL/16', letter: 'XXL' }
+  };
+
+  var SIZES = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26];
+
+  /* ------------------------------------------------------------- helpers */
+  function bucketFor(n) {
+    for (var i = 0; i < BUCKETS.length; i++) {
+      if (n >= BUCKETS[i].lo && n <= BUCKETS[i].hi) return BUCKETS[i];
+    }
+    return null;
+  }
+  function indexOfBucket(b) {
+    for (var i = 0; i < BUCKETS.length; i++) { if (BUCKETS[i] === b) return i; }
+    return -1;
+  }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined && text !== null) n.textContent = text;
+    return n;
+  }
+  function full(b) { return b.key + ' (' + b.range + ')'; }
+
+  /* localStorage may be disabled, blocked by the browser, or throw on
+     access in private mode. Never let that break the page. */
+  var store = {
+    get: function (k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { window.localStorage.setItem(k, v); } catch (e) { /* fine */ } }
+  };
+
+  /* --------------------------------------------------------------- state */
+  var mode = 'buy';
+  var size = null;
+
+  var elSizes    = document.getElementById('sizes');
+  var elResult   = document.getElementById('result');
+  var elLabel    = document.getElementById('picker-label');
+  var btnBuy     = document.getElementById('mode-buy');
+  var btnSell    = document.getElementById('mode-sell');
+
+  /* -------------------------------------------------------------- picker */
+  var sizeButtons = [];
+  SIZES.forEach(function (n) {
+    var b = el('button');
+    b.type = 'button';
+    b.setAttribute('aria-pressed', 'false');
+    b.appendChild(el('span', 'uk', 'UK'));
+    b.appendChild(document.createTextNode(String(n)));
+    b.addEventListener('click', function () { setSize(n); });
+    elSizes.appendChild(b);
+    sizeButtons.push(b);
+  });
+
+  function setSize(n) {
+    size = n;
+    for (var i = 0; i < SIZES.length; i++) {
+      sizeButtons[i].setAttribute('aria-pressed', SIZES[i] === n ? 'true' : 'false');
+    }
+    store.set('vsd-size', String(n));
+    render();
+  }
+
+  function setMode(m) {
+    mode = m;
+    btnBuy.setAttribute('aria-pressed', m === 'buy' ? 'true' : 'false');
+    btnSell.setAttribute('aria-pressed', m === 'sell' ? 'true' : 'false');
+    elLabel.textContent = m === 'buy' ? 'Your usual UK size' : 'The garment’s UK size';
+    store.set('vsd-mode', m);
+    render();
+  }
+  btnBuy.addEventListener('click', function () { setMode('buy'); });
+  btnSell.addEventListener('click', function () { setMode('sell'); });
+
+  /* -------------------------------------------------------- render: buy */
+  function renderBuy(out, n, b) {
+    var idx = indexOfBucket(b);
+    var atBottom = (n === b.lo);
+    var neighbour = atBottom ? BUCKETS[idx - 1] : BUCKETS[idx + 1];
+    var other = atBottom ? BUCKETS[idx + 1] : BUCKETS[idx - 1];
+
+    /* 1. the answer */
+    var a = el('p', 'answer');
+    a.appendChild(document.createTextNode('Vinted’s Nov 2025 system puts UK ' + n + ' in '));
+    a.appendChild(el('span', 'big', full(b)));
+    a.appendChild(document.createTextNode('.'));
+    out.appendChild(a);
+
+    /* 2. the letter-shift warning, where the letters actually moved */
+    var old = OLD[n];
+    if (old && old.letter !== b.key) {
+      var c = el('div', 'callout');
+      var s1 = el('strong', null, 'The letters moved. ');
+      c.appendChild(s1);
+      c.appendChild(document.createTextNode(
+        'Before Nov 2025 a UK ' + n + ' on Vinted was labelled ' + old.letter + '. ' +
+        'It is now ' + b.key + '. If you have been ticking ' + old.letter +
+        ' out of habit, that is a different garment now.'
+      ));
+      out.appendChild(c);
+    }
+
+    /* 3. what to tick */
+    var strat = el('div', 'block');
+    strat.appendChild(el('h3', null, 'What to tick in the filter'));
+    var ul = el('ul', 'ticks');
+
+    var li1 = el('li', 'primary');
+    li1.appendChild(el('span', 'box', b.key));
+    li1.appendChild(document.createTextNode(b.range));
+    var w1 = el('span', 'why', 'Your bucket. It will also show you the other size in it, and there is no way to stop that.');
+    li1.appendChild(w1);
+    ul.appendChild(li1);
+
+    if (neighbour) {
+      var li2 = el('li');
+      li2.appendChild(el('span', 'box', neighbour.key));
+      li2.appendChild(document.createTextNode(neighbour.range));
+      li2.appendChild(el('span', 'why',
+        'UK ' + n + ' sits at the ' + (atBottom ? 'bottom' : 'top') + ' of ' + b.key + ', so it is the size that gets pushed ' +
+        (atBottom ? 'down into ' + neighbour.key : 'up into ' + neighbour.key) +
+        '. Auto-converted listings are often out by one bucket, and sellers with an in-between garment guess.'
+      ));
+      ul.appendChild(li2);
+    } else {
+      var li2b = el('li');
+      li2b.appendChild(el('span', 'box', '—'));
+      li2b.appendChild(document.createTextNode(atBottom ? 'nothing smaller is documented' : 'nothing larger is documented'));
+      li2b.appendChild(el('span', 'why',
+        b.key + ' is the ' + (atBottom ? 'smallest' : 'largest') + ' bucket we could verify. If your account shows more, tick that too — we could not corroborate it.'
+      ));
+      ul.appendChild(li2b);
+    }
+
+    if (other) {
+      var li3 = el('li');
+      li3.appendChild(el('span', 'box', other.key));
+      li3.appendChild(document.createTextNode(other.range + ' — optional'));
+      li3.appendChild(el('span', 'why',
+        'Only if you have the patience. Mislabelling goes both ways, but this side throws up more misses than hits.'
+      ));
+      ul.appendChild(li3);
+    }
+
+    strat.appendChild(ul);
+    strat.appendChild(el('p', 'note',
+      'Ticking two buckets means more to scroll. That is the trade: Vinted no longer lets you filter to one number.'
+    ));
+    out.appendChild(strat);
+
+    /* 4. old-system orientation */
+    var older = el('div', 'block');
+    older.appendChild(el('h3', null, 'Older listings, and other people’s screens'));
+    if (old) {
+      older.appendChild(el('p', null,
+        'Listings from before Nov 2025 may show ' + old.label + ' for your size' +
+        (old.uncertain ? ' (the XS end of the old system is the part we are least sure of).' : '.') +
+        ' Some accounts still see the old labels, or numbers, depending on which version of Vinted they are on — so if you see a number, believe the number.'
+      ));
+    } else {
+      older.appendChild(el('p', null,
+        'We could not verify an old-system letter label for UK ' + n + ' — the pre-Nov-2025 labels we can corroborate run from UK 6 to UK 16. ' +
+        'On older or reverted listings, look for the numeric size in the title or description, and ask if it is not there.'
+      ));
+    }
+    out.appendChild(older);
+  }
+
+  /* ------------------------------------------------------- render: sell */
+  function renderSell(out, n, b) {
+    var old = OLD[n];
+
+    var a = el('p', 'answer');
+    a.appendChild(document.createTextNode('List a UK ' + n + ' under '));
+    a.appendChild(el('span', 'big', full(b)));
+    a.appendChild(document.createTextNode('.'));
+    out.appendChild(a);
+
+    var c = el('div', 'callout');
+    c.appendChild(el('strong', null, 'The bucket is not enough. '));
+    c.appendChild(document.createTextNode(
+      'A buyer who ticks ' + b.key + ' gets every UK ' + b.lo + ' and ' + b.hi +
+      ' on the site. The listings that sell are the ones where the buyer can see the number without asking — and buyers on a different version of Vinted may not see your bucket the way you do.'
+    ));
+    out.appendChild(c);
+
+    var howto = el('div', 'block');
+    howto.appendChild(el('h3', null, 'What to write'));
+    var ul = el('ul', 'plain');
+    var items = [
+      'Put “UK ' + n + '” in the title. It is the first thing a buyer reads and it is searchable.',
+      'Repeat the number in the first line of the description, before anything else.',
+      'Give pit to pit, shoulder to hem, and waist — laid flat, in cm. This is what buyers DM to ask for.',
+      'Photograph the size tag. One photo replaces five messages.',
+      'Say if it runs small or large. “UK 12 but cut small, fits more like a 10” sells better than silence.'
+    ];
+    if (old) {
+      items.push('Worth knowing: before Nov 2025 this size was labelled ' + old.label + ' on Vinted. Buyers still using the old letters may search for that.');
+    }
+    items.forEach(function (t) { ul.appendChild(el('li', null, t)); });
+    howto.appendChild(ul);
+    out.appendChild(howto);
+
+    var snip = el('div', 'block');
+    snip.appendChild(el('h3', null, 'Copy this into your description'));
+    var text =
+      'UK ' + n + '. Listed under ' + b.key + ' (' + b.range + ') because that is all Vinted allows now.\n' +
+      'Measurements laid flat: pit to pit __cm, shoulder to hem __cm, waist __cm.\n' +
+      'Fit: [true to size / runs small / runs large]. Happy to measure anything else — just ask.';
+    var pre = el('pre', null, text);
+    snip.appendChild(pre);
+
+    var btn = el('button', 'copy', 'Copy');
+    btn.type = 'button';
+    btn.addEventListener('click', function () { copy(text, btn); });
+    snip.appendChild(btn);
+    snip.appendChild(el('p', 'note', 'Fill in the blanks with a tape measure. The underscores are placeholders, not a style.'));
+    out.appendChild(snip);
+  }
+
+  /* Copy with a same-document fallback. No network, no permissions prompt
+     that can leave the button stuck saying nothing. */
+  function copy(text, btn) {
+    function done(ok) {
+      btn.textContent = ok ? 'Copied' : 'Select it and copy';
+      window.setTimeout(function () { btn.textContent = 'Copy'; }, 2200);
+    }
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'absolute';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    var ok = false;
+    try {
+      ta.select();
+      ok = document.execCommand('copy');
+    } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+
+    if (ok) { done(true); return; }
+    if (window.navigator && window.navigator.clipboard && window.navigator.clipboard.writeText) {
+      try {
+        window.navigator.clipboard.writeText(text).then(function () { done(true); },
+                                                        function () { done(false); });
+        return;
+      } catch (e) { /* fall through */ }
+    }
+    done(false);
+  }
+
+  /* -------------------------------------------------------------- render */
+  function render() {
+    while (elResult.firstChild) elResult.removeChild(elResult.firstChild);
+
+    if (size === null) {
+      elResult.appendChild(el('p', 'placeholder',
+        mode === 'buy' ? 'Pick your usual UK size above.' : 'Pick the garment’s UK size above.'));
+      return;
+    }
+    var b = bucketFor(size);
+    if (!b) {
+      elResult.appendChild(el('p', 'placeholder', 'No documented bucket for UK ' + size + '.'));
+      return;
+    }
+    if (mode === 'buy') renderBuy(elResult, size, b);
+    else renderSell(elResult, size, b);
+  }
+
+  /* ---------------------------------------------------------- restore */
+  var savedMode = store.get('vsd-mode');
+  if (savedMode === 'sell') { mode = 'sell'; }
+  btnBuy.setAttribute('aria-pressed', mode === 'buy' ? 'true' : 'false');
+  btnSell.setAttribute('aria-pressed', mode === 'sell' ? 'true' : 'false');
+  elLabel.textContent = mode === 'buy' ? 'Your usual UK size' : 'The garment’s UK size';
+
+  var savedSize = parseInt(store.get('vsd-size'), 10);
+  if (SIZES.indexOf(savedSize) !== -1) {
+    size = savedSize;
+    for (var i = 0; i < SIZES.length; i++) {
+      sizeButtons[i].setAttribute('aria-pressed', SIZES[i] === size ? 'true' : 'false');
+    }
+  }
+  render();
+})();
+</script>
+</body>
+</html>
