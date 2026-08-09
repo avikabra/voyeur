@@ -92,12 +92,21 @@ That last paragraph is the single most actionable finding in this document. Most
 
 **Pilot-run corrections (2026-08-09), measured not guessed:** (1) The sandbox egress proxy blocks
 direct fetches to nearly everything — Apple RSS, forums, reddit, even google.com; only WebSearch
-(server-side) and a few allowlisted domains (github.com, npmjs, raw.githubusercontent.com) work.
-(2) WebSearch's index **structurally excludes reddit.com** — ~20 `site:reddit.com` patterns
-returned zero Reddit URLs and `allowed_domains:["reddit.com"]` hard-errors. Reddit is effectively
-invisible to this pipeline; don't spend scout budget on it. (3) What IS richly indexed with real
-thread URLs: **Mumsnet** (style board — the pilot's best vein), **Styleforum**, **PurseForum**,
-**YouLookFab**, **Quora**, Product Hunt. Mine those.
+(server-side) and a few allowlisted domains (github.com, npmjs, raw.githubusercontent.com,
+api.github.com) work. (2) In the pilot, WebSearch returned zero reddit.com URLs across ~20
+`site:reddit.com` patterns and `allowed_domains:["reddit.com"]` hard-errored. (3) What IS richly
+indexed with real thread URLs: **Mumsnet**, **Styleforum**, **PurseForum**, **YouLookFab**,
+**Quora**, Product Hunt.
+
+**Owner correction to (2) — do not write Reddit off (2026-08-09).** One measurement is not a
+verdict. Every scout run should re-probe Reddit cheaply (a couple of `site:reddit.com` queries;
+phrasing without the site: operator, e.g. `reddit "is there an app" virtual try on`, often
+surfaces Reddit content quoted or mirrored elsewhere), and lean on **consensus proxies** that
+don't need any single forum: app-store review volume and ratings trends, Google Trends
+trajectories, press coverage of consumer complaints, YouTube/TikTok content volume visible
+through search, multiple independent forums saying the same thing. The bar the owner set is
+**consensus at scale** — big problems that show up everywhere — which by definition doesn't
+depend on reaching one specific site.
 
 | Source | Verdict | Detail |
 |---|---|---|
