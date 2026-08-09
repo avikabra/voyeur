@@ -1,4 +1,4 @@
-# Vinted Size Decoder
+# Size Decoder for Vinted
 
 **Work out what Vinted's S/M/L buckets mean for your actual UK size — and how to actually find your size on there.**
 
@@ -8,13 +8,13 @@ One HTML file. No dependencies, no build step, no network requests once the page
 
 ## What it does
 
-On 10 November 2025 Vinted collapsed UK womenswear numeric sizes into letter buckets with ranges — `S / UK 8–10`, `M / UK 12–14`, and so on — and auto-converted every existing listing. The result, as reported across a year of forum threads: ticking "14" in the filter returns 12s and mislabelled 10s; sellers can only list a bucket, so buyers message to ask what the garment actually is; anyone between two sizes has to tick several boxes and scroll.
+On 10 November 2025 Vinted collapsed UK womenswear numeric sizes into letter buckets with ranges — `S / UK 8–10`, `M / UK 12–14`, and so on — and auto-converted every existing listing. The result, as reported across a year of forum threads: ask the filter for your size and the bucket hands you the other sizes in it too, plus mislabelled ones; sellers can only list a bucket, so buyers message to ask what the garment actually is; anyone between two sizes has to tick several boxes and scroll.
 
 This page:
 
-- **Buying mode** — pick your usual UK size and it tells you which bucket you're in under the documented system, which boxes to tick (your bucket *plus* the adjacent one, with the reasoning for that specific neighbour), what your size was labelled before November 2025 so you can read older listings, and a measurement-first checklist.
+- **Buying mode** — pick your usual UK size and it tells you which bucket you're in under the widely reported system, which boxes to tick (your bucket *plus* the adjacent one, with the reasoning for that specific neighbour), what your size was labelled before November 2025 so you can read older listings, and a measurement-first checklist.
 - **Selling mode** — pick the garment's UK size and it tells you which bucket to list under, exactly what to write so buyers on any version of Vinted's UI can find you, and a copy-ready description snippet with the numeric size and measurement placeholders.
-- **Reference tables** — the full documented mapping, new ranges next to the old pre-November single-size labels, date-stamped, in plain HTML that works with JavaScript switched off.
+- **Reference tables** — the full reported mapping, new ranges next to the old pre-November single-size labels, date-stamped, in plain HTML that works with JavaScript switched off.
 
 ## What it can't do
 
@@ -28,7 +28,7 @@ This page:
 
 The whole thing is a single `index.html`: inline CSS, inline vanilla JavaScript, no external assets of any kind. The size mapping is a small array of six bucket objects (letter, UK range) plus an object for the old single-size labels. Picking a size looks up the bucket, works out whether your size sits at the bottom or the top of its range, and names the neighbouring bucket on that side — that's the one auto-converted and guessed-at listings leak into, so that's the one worth ticking. If the letters moved between the old and new systems for your size (UK 10 was `M`, it is now `S`), it says so, because that's the trap for anyone who ticked letters out of habit.
 
-The interactive picker is progressive enhancement. A one-line script adds a `js` class to `<html>`; without it the picker is hidden, a short note explains why, and the two reference tables — which contain the same mapping, both directions — are plain semantic HTML that reads fine in any browser, in Reader mode, or through a screen reader. The last-picked size and mode are kept in `localStorage`, wrapped in try/catch so a browser with storage disabled or a private window that throws on access degrades to "doesn't remember" rather than a blank page. The copy button uses a hidden textarea and `document.execCommand`, falling back to the async clipboard API, falling back to telling you to select the text yourself. Nothing on the page makes a network request after load.
+The interactive picker is progressive enhancement. The main script's first statement adds a `js` class to `<html>` — deliberately inside the same script rather than an earlier one, so that if the script fails to parse or run, the class is never set and the tables stay visible instead of a dead picker. Without that class the picker is hidden, a short note explains why, and the two reference tables — which contain the same mapping, both directions — are plain semantic HTML that reads fine in any browser, in Reader mode, or through a screen reader. The last-picked size and mode are kept in `localStorage`, wrapped in try/catch so a browser with storage disabled or a private window that throws on access degrades to "doesn't remember" rather than a blank page. The copy button uses a hidden textarea and `document.execCommand`, falling back to the async clipboard API, falling back to telling you to select the text yourself. Nothing on the page makes a network request after load.
 
 ## Run it locally
 
@@ -40,11 +40,11 @@ Or just open `index.html` in a browser — it's one file with no origin requirem
 
 ## Data provenance
 
-The mapping is **encoded from multi-source reporting of Vinted's November 2025 change** — independent user threads describing the same buckets — not from official Vinted documentation. Compiled 9 August 2026. Confidence, stated plainly because it varies:
+The mapping is **compiled from user threads on Mumsnet and press reporting of the November 2025 change** (ChannelX, Glossy, and the Yorkshire Post syndication of it) — not from official Vinted documentation. The Mumsnet threads are the primary source for the bucket ranges themselves; the press coverage establishes that the change happened, when, and roughly how it landed. Compiled 9 August 2026. Confidence, stated plainly because it varies:
 
 | Data point | Confidence |
 | --- | --- |
-| New: S = UK 8–10, M = UK 12–14, L = UK 16–18, XXL = UK 24–26 | High — corroborated across independent reports |
+| New: S = UK 8–10, M = UK 12–14, L = UK 16–18, XXL = UK 24–26 | High — corroborated across user threads and press reports |
 | New: XL = UK 20–22 | Moderate–high |
 | New: XS = UK 4–6 | Moderate |
 | Old: S/8, M/10, L/12, XL/14, XXL/16 | High |

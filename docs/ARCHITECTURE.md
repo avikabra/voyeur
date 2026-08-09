@@ -84,13 +84,25 @@ Legitimate reasons for a serverless function: a third-party API that forbids bro
 
 ## Deployment model
 
-- **One Vercel project per app.** Independent deploys, independent failure. A bad build on one app never takes the catalog down.
-- **The catalog site is its own project.** Rebuilt and redeployed after every ship so new entries appear.
-- Deploys go through the **Vercel MCP tools** available in the session (`deploy_to_vercel` and friends). No CI configuration, no GitHub Actions, no deploy keys.
-- **Free (hobby) tier throughout.** Ceilings to respect — **verify current numbers before relying on them, these change**: roughly 100 deploys/day, a cap on project count, and 100GB/month bandwidth shared across every project on the account. Bandwidth is shared, which means a heavy model file on one app degrades every app. Budget asset weight accordingly.
-- Project naming: `voyeur-<slug>`. Predictable, greppable, matches the manifest.
+**GitHub Pages, one static site for everything** (decided 2026-08-09 during the pilot, superseding
+the original Vercel plan — see below for why):
 
-See OPERATIONS for quota stewardship — what to do when you're approaching a limit.
+- The whole library lives at **https://avikabra.github.io/voyeur/** — the catalog at the root,
+  each app served verbatim at `/apps/<slug>/app/`, its catalog page beside it at `/apps/<slug>/`.
+- `site/build.js` builds everything (`SITE_URL=https://avikabra.github.io/voyeur BASE_PATH=/voyeur`),
+  and the result is published by force-pushing `site/dist` to the **`gh-pages` branch**, which Pages
+  serves. Two equivalent paths: push to `main` and let `.github/workflows/pages.yml` do it, or
+  build locally and force-push `gh-pages` yourself. Verify ships via the GitHub Actions API — the
+  auto "pages build and deployment" run must succeed.
+- Failure isolation comes from the build script, not project separation: a malformed app or
+  manifest is skipped with a warning, never sinking the catalog.
+- Pages is free with soft limits (~1GB site, ~100GB/month bandwidth) — keep assets lean.
+
+**Why not Vercel** (as of Aug 2026 — re-check if the owner changes connector settings): the
+claude.ai Vercel connector is project-scoped to the owner's pre-existing projects. It can
+sometimes create a new project's deployment but can never read, verify, or manage it — and an
+unverifiable deploy is treated as a failed deploy. If the owner grants the connector full project
+access, Vercel per-app projects become viable again; until then, don't attempt it.
 
 ## Tech freedom
 

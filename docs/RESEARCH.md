@@ -90,9 +90,18 @@ That last paragraph is the single most actionable finding in this document. Most
 
 **As of Aug 2026.** Access methods are the fastest-decaying facts in this document. Probe before building a scout run around any of them.
 
+**Pilot-run corrections (2026-08-09), measured not guessed:** (1) The sandbox egress proxy blocks
+direct fetches to nearly everything — Apple RSS, forums, reddit, even google.com; only WebSearch
+(server-side) and a few allowlisted domains (github.com, npmjs, raw.githubusercontent.com) work.
+(2) WebSearch's index **structurally excludes reddit.com** — ~20 `site:reddit.com` patterns
+returned zero Reddit URLs and `allowed_domains:["reddit.com"]` hard-errors. Reddit is effectively
+invisible to this pipeline; don't spend scout budget on it. (3) What IS richly indexed with real
+thread URLs: **Mumsnet** (style board — the pilot's best vein), **Styleforum**, **PurseForum**,
+**YouLookFab**, **Quora**, Product Hunt. Mine those.
+
 | Source | Verdict | Detail |
 |---|---|---|
-| **WebSearch snippet mining** | **Primary tool** | `site:reddit.com/r/femalefashionadvice "is there an app that"`. Zero setup, no auth, reads the content that matters (the post text) straight out of search snippets. This is the workhorse |
+| **WebSearch snippet mining** | **Primary tool** | Zero setup, no auth. But see pilot corrections above: reddit.com is absent from the index — target Mumsnet/Styleforum/PurseForum/YouLookFab/Quora instead |
 | Reddit direct (`.json` endpoints) | **Dead** | Killed ~May 2026 by TLS fingerprinting + datacenter-IP blocking. GummySearch shut down Nov 2025 over Reddit API costs. Do not attempt direct fetches; you will burn the run |
 | Apple App Store review RSS | **Works, official** | `itunes.apple.com/{cc}/rss/customerreviews/id=<app-id>/...` — no key, 500 most-recent reviews per app. 1-star reviews of paid fashion apps are a dense source of unmet needs |
 | Google Play reviews | Works, unofficial | Scraping; low block risk historically. Gray area — see ToS rules in PRINCIPLES |
