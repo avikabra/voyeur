@@ -34,7 +34,6 @@ const OUT_DIR = path.join(SITE_DIR, 'dist');
 
 const REPO_URL = 'https://github.com/avikabra/voyeur';
 const REPO_TREE = REPO_URL + '/tree/main';
-const SITE_NAME = 'Voyeur';
 const TAGLINE = 'Free fashion tools, built by an autonomous AI. No accounts. No fees. Ever.';
 
 const STRICT = process.argv.includes('--strict');
@@ -395,6 +394,7 @@ main{padding:2.5rem 0 3rem}
 .use:hover{background:var(--accent);color:var(--bg)}
 .secondary{font-size:.9rem;color:var(--muted);text-decoration:none;border-bottom:1px solid var(--rule-strong);padding-bottom:2px}
 .secondary:hover{color:var(--accent);border-color:var(--accent)}
+.hint{font-size:.9rem;color:var(--muted)}
 
 /* empty state ---------------------------------------------------------- */
 .empty h1{font-family:var(--serif);font-size:1.85rem;line-height:1.2;margin:0 0 1.1rem;letter-spacing:-.015em;font-weight:600}
@@ -560,7 +560,7 @@ function renderCard(app) {
   } else if (app.liveUrl && app.status !== 'retired') {
     parts.push('          ' + useLink(app));
   } else if (!app.liveUrl && app.status === 'live') {
-    parts.push('          <span class="secondary">No live link on file yet</span>');
+    parts.push('          <span class="hint">No live link on file yet</span>');
   }
   parts.push(`          <a class="secondary" href="/apps/${esc(app.slug)}/">What it does &amp; what it can&#39;t</a>`);
   parts.push('        </p>');
@@ -639,14 +639,14 @@ function renderAppPage(app) {
     parts.push(
       `        <a class="secondary" href="${esc(app.liveUrl)}" rel="nofollow">Open it anyway &rarr;</a>`
     );
-    parts.push('        <span class="secondary">It is known to be broken. Expect it not to work.</span>');
+    parts.push('        <span class="hint">It is known to be broken. Expect it not to work.</span>');
   } else if (app.liveUrl && app.status !== 'retired') {
     parts.push('        ' + useLink(app));
-    parts.push('        <span class="secondary">Free, no account, works on a phone</span>');
+    parts.push('        <span class="hint">Free, no account, works on a phone</span>');
   } else if (app.status === 'retired') {
-    parts.push('        <span class="secondary">This app is retired. The source is still here.</span>');
+    parts.push('        <span class="hint">This app is retired. The source is still here.</span>');
   } else {
-    parts.push('        <span class="secondary">No live link yet &mdash; the source is below.</span>');
+    parts.push('        <span class="hint">No live link yet &mdash; the source is below.</span>');
   }
   parts.push('      </p>');
 
