@@ -38,6 +38,12 @@ const TAGLINE = 'Free fashion tools, built by an autonomous AI. No accounts. No 
 
 const STRICT = process.argv.includes('--strict');
 const SITE_URL = (process.env.SITE_URL || '').replace(/\/+$/, '');
+// BASE_PATH: prefix for all internal links when the site is served from a
+// subpath (e.g. "/voyeur" on GitHub Pages project sites). Empty = site root.
+const BASE = (process.env.BASE_PATH || '').replace(/\/+$/, '');
+function u(p) {
+  return BASE + p;
+}
 
 const STATUSES = {
   live: { label: 'Live', note: '' },
@@ -492,10 +498,10 @@ ${canonical ? `<link rel="canonical" href="${esc(canonical)}">\n` : ''}<meta pro
 <body>
 <header class="masthead">
   <div class="wrap">
-    <a class="wordmark" href="/">Voyeur</a>
+    <a class="wordmark" href="${u('/')}">Voyeur</a>
     <p class="tagline">${esc(TAGLINE)}</p>
     <nav>
-      <a href="/">Catalog</a><span>/</span><a href="/about/">How this works</a><span>/</span><a href="${REPO_URL}">Source</a>
+      <a href="${u('/')}">Catalog</a><span>/</span><a href="${u('/about/')}">How this works</a><span>/</span><a href="${REPO_URL}">Source</a>
     </nav>
   </div>
 </header>
@@ -507,7 +513,7 @@ ${opts.body}
 <footer>
   <div class="wrap">
     <p>Every app here was found, built, tested and shipped by an autonomous AI pipeline. No human writes the code, picks the ideas, or approves the deploys.</p>
-    <p>MIT licensed &middot; <a href="${REPO_URL}">Source on GitHub</a> &middot; <a href="/about/">How this works</a></p>
+    <p>MIT licensed &middot; <a href="${REPO_URL}">Source on GitHub</a> &middot; <a href="${u('/about/')}">How this works</a></p>
     <p>No accounts, no tracking, no third-party scripts.</p>
   </div>
 </footer>
@@ -540,7 +546,7 @@ function renderCard(app) {
   const parts = [];
   parts.push(`      <li class="card${dim}">`);
   parts.push(
-    `        <h2 class="card-need"><a href="/apps/${esc(app.slug)}/">${esc(app.need)}</a></h2>`
+    `        <h2 class="card-need"><a href="${u('/apps/' + esc(app.slug) + '/')}">${esc(app.need)}</a></h2>`
   );
   parts.push('        <p class="card-meta">');
   parts.push(`          <span class="appname">${esc(app.name)}</span>`);
@@ -562,7 +568,7 @@ function renderCard(app) {
   } else if (!app.liveUrl && app.status === 'live') {
     parts.push('          <span class="hint">No live link on file yet</span>');
   }
-  parts.push(`          <a class="secondary" href="/apps/${esc(app.slug)}/">What it does &amp; what it can&#39;t</a>`);
+  parts.push(`          <a class="secondary" href="${u('/apps/' + esc(app.slug) + '/')}">What it does &amp; what it can&#39;t</a>`);
   parts.push('        </p>');
   parts.push('      </li>');
   return parts.join('\n');
@@ -582,7 +588,7 @@ function emptyState() {
         <li>Where a discontinued piece went</li>
       </ul>
       <p class="cta-row">
-        <a class="use" href="/about/">How this works &rarr;</a>
+        <a class="use" href="${u('/about/')}">How this works &rarr;</a>
         <a class="secondary" href="${REPO_URL}">Watch it happen on GitHub</a>
       </p>
     </section>`;
@@ -624,7 +630,7 @@ function renderAppPage(app) {
   const sourceUrl = REPO_TREE + '/apps/' + encodeURIComponent(app.dirName);
 
   const parts = [];
-  parts.push('    <p class="crumb"><a href="/">&larr; All apps</a></p>');
+  parts.push(`    <p class="crumb"><a href="${u('/')}">&larr; All apps</a></p>`);
   parts.push('    <article>');
   parts.push(`      <h1 class="need">${esc(app.need)}</h1>`);
   parts.push('      <p class="detail-meta">');
@@ -799,8 +805,8 @@ function render404() {
       <h1>That page isn&#39;t here.</h1>
       <p>It may have been retired, or it may never have existed. The catalog is the reliable list.</p>
       <p class="cta-row">
-        <a class="use" href="/">See the catalog &rarr;</a>
-        <a class="secondary" href="/about/">How this works</a>
+        <a class="use" href="${u('/')}">See the catalog &rarr;</a>
+        <a class="secondary" href="${u('/about/')}">How this works</a>
       </p>
     </div>`;
   return layout({
@@ -841,6 +847,15 @@ function build() {
 
   for (const app of apps) {
     written.push(writeFile(path.join('apps', app.slug, 'index.html'), renderAppPage(app)));
+    // Ship the app itself alongside its catalog page: apps/<slug>/app/ serves
+    // the app directory verbatim. Static apps only — that's the architecture.
+    try {
+      fs.cpSync(path.join(APPS_DIR, app.dirName), path.join(OUT_DIR, 'apps', app.slug, 'app'), {
+        recursive: true,
+      });
+    } catch (err) {
+      warn('apps/' + app.dirName + '/ could not be copied into dist (' + err.message + ')');
+    }
   }
 
   written.push(writeFile('robots.txt', robotsTxt()));
