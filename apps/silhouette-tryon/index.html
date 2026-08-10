@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Silhouette Try-On — see roughly how a garment would sit on you</title>
+<meta name="description" content="Upload a photo of yourself and a photo of a garment. See a rough, honest overlay of where it would sit on your body — entirely in your browser, nothing uploaded anywhere.">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://voyeur-catalog.vercel.app/apps/silhouette-tryon/app/">
+<meta property="og:title" content="Silhouette Try-On · Voyeur">
+<meta property="og:description" content="A rough, honest garment overlay — not photorealistic try-on. Runs entirely in your browser; your photos never leave your device.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://voyeur-catalog.vercel.app/apps/silhouette-tryon/app/">
+<meta property="og:site_name" content="Voyeur">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23faf9f7'/%3E%3Ctext x='16' y='24' text-anchor='middle' font-family='Georgia, serif' font-style='italic' font-weight='700' font-size='24' fill='%2315171c'%3EV%3C/text%3E%3C/svg%3E">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none';">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg:#f6f5f2;
+  --panel:#ffffff;
+  --ink:#171512;
+  --ink-soft:#403a33;
+  --muted:#71675c;
+  --rule:#e1dad0;
+  --rule-strong:#c9bfb0;
+  --accent:#7a3ccf;
+  --accent-dark:#5f2ea6;
+  --accent-soft:rgba(122,60,207,.09);
+  --warn-bg:#fdf3e0;
+  --warn-ink:#6b4a06;
+  --warn-rule:#f0dba9;
+  --err-bg:#fdecec;
+  --err-ink:#8f2323;
+  --err-rule:#f2c9c9;
+  --serif:ui-serif,Georgia,"Iowan Old Style","Times New Roman",Times,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#131110;
+    --panel:#1c1a18;
+    --ink:#f3efe9;
+    --ink-soft:#d3cbc0;
+    --muted:#a39a8d;
+    --rule:#332e29;
+    --rule-strong:#4a433b;
+    --accent:#b78df0;
+    --accent-dark:#cba6f5;
+    --accent-soft:rgba(183,141,240,.14);
+    --warn-bg:#2c2410;
+    --warn-ink:#e8c877;
+    --warn-rule:#4d3f18;
+    --err-bg:#2c1414;
+    --err-ink:#f0a3a3;
+    --err-rule:#4d2020;
+  }
+}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:40rem;margin:0 auto;padding:1.5rem 1.1rem 3rem}
+a{color:var(--accent);text-underline-offset:.15em}
+a:hover{color:var(--accent-dark)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:5px}
+h1{font-family:var(--serif);font-size:1.7rem;line-height:1.2;margin:0 0 .35rem;letter-spacing:-.01em}
+.tagline{margin:0 0 1.1rem;color:var(--ink-soft);font-size:1rem}
+.banner{background:var(--accent-soft);border:1px solid var(--rule-strong);border-radius:var(--r);padding:.85rem 1rem;margin:0 0 1.4rem;font-size:.9rem;color:var(--ink-soft)}
+.banner p{margin:0 0 .4rem}
+.banner p:last-child{margin-bottom:0}
+.banner b{color:var(--ink)}
+.card{background:var(--panel);border:1px solid var(--rule);border-radius:var(--r);padding:1.1rem;margin:0 0 1rem}
+.card h2{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 .7rem;font-weight:700}
+.upload-row{display:flex;align-items:center;gap:.9rem;flex-wrap:wrap}
+.thumb{width:4.5rem;height:4.5rem;border-radius:10px;background:var(--bg);border:1px dashed var(--rule-strong);display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb svg{width:1.5rem;height:1.5rem;opacity:.35}
+.upload-controls{flex:1;min-width:12rem}
+input[type=file]{display:block;width:100%;font-size:.86rem;color:var(--ink-soft)}
+.hint{margin:.4rem 0 0;font-size:.82rem;color:var(--muted)}
+.status{margin:.55rem 0 0;font-size:.86rem;padding:.5rem .7rem;border-radius:8px;display:none}
+.status.show{display:block}
+.status.busy{background:var(--accent-soft);color:var(--ink-soft)}
+.status.error{background:var(--err-bg);color:var(--err-ink);border:1px solid var(--err-rule)}
+.status.ok{background:rgba(20,140,90,.08);color:#0f6b45}
+@media (prefers-color-scheme:dark){.status.ok{color:#6fd6ab}}
+.result{display:none}
+.result.show{display:block}
+.canvas-wrap{position:relative;width:100%;border-radius:var(--r);overflow:hidden;background:#111;border:1px solid var(--rule)}
+.canvas-wrap canvas{display:block;width:100%;height:auto}
+.controls{display:flex;flex-wrap:wrap;gap:.9rem 1.3rem;align-items:center;margin-top:.9rem}
+.control{display:flex;align-items:center;gap:.5rem;font-size:.86rem;color:var(--ink-soft)}
+.control input[type=range]{width:8rem}
+.actions{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem}
+button{font:inherit;cursor:pointer}
+.btn{display:inline-block;background:var(--accent);color:#fff;border:none;font-weight:600;font-size:.92rem;padding:.6rem 1.05rem;border-radius:10px}
+.btn:hover{background:var(--accent-dark)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--rule-strong)}
+.btn.ghost:hover{background:var(--accent-soft)}
+details{margin-top:1.6rem;font-size:.88rem;color:var(--ink-soft)}
+summary{cursor:pointer;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase;font-weight:700}
+details ul{margin:.7rem 0 0;padding-left:1.15rem;line-height:1.6}
+footer{margin-top:2.2rem;padding-top:1.2rem;border-top:1px solid var(--rule);font-size:.82rem;color:var(--muted)}
+footer a{color:var(--muted);text-decoration:underline}
+noscript .card{border-color:var(--err-rule);background:var(--err-bg);color:var(--err-ink)}
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Silhouette Try-On</h1>
+  <p class="tagline">See roughly how a garment would sit on you, before you buy it.</p>
+
+  <div class="banner">
+    <p><b>Both photos stay on this device.</b> Nothing is uploaded anywhere — every step runs in your browser. Turn your network off after this page has loaded once and it still works.</p>
+    <p><b>This is a rough schematic overlay, not a photorealistic try-on.</b> It shows roughly where a garment would sit and roughly how wide it is against your shoulders and hips — not how the fabric will drape, stretch, or actually look.</p>
+  </div>
+
+  <noscript>
+    <div class="card">This tool needs JavaScript to run — everything happens in your browser, with nothing sent to a server.</div>
+  </noscript>
+
+  <div class="card" id="personCard">
+    <h2>1. A photo of you</h2>
+    <div class="upload-row">
+      <div class="thumb" id="personThumb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c1.2-4 4-6 7-6s5.8 2 7 6"/></svg>
+      </div>
+      <div class="upload-controls">
+        <label for="personInput" class="visually-hidden">Photo of you</label>
+        <input type="file" id="personInput" accept="image/*" capture="user">
+        <p class="hint">Front-facing, head to hips visible, plain-ish pose. A normal selfie works.</p>
+      </div>
+    </div>
+    <p class="status" id="personStatus"></p>
+  </div>
+
+  <div class="card" id="garmentCard">
+    <h2>2. A photo of the garment</h2>
+    <div class="upload-row">
+      <div class="thumb" id="garmentThumb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 4l2 2h4l2-2 4 4-3 3v9H7v-9L4 8z"/></svg>
+      </div>
+      <div class="upload-controls">
+        <label for="garmentInput" class="visually-hidden">Photo of the garment</label>
+        <input type="file" id="garmentInput" accept="image/*">
+        <p class="hint">A product photo on a plain background works best — a screenshot from a shop is fine.</p>
+      </div>
+    </div>
+    <p class="status" id="garmentStatus"></p>
+  </div>
+
+  <div class="card result" id="resultCard">
+    <h2>Result</h2>
+    <div class="canvas-wrap">
+      <canvas id="resultCanvas"></canvas>
+    </div>
+    <div class="controls">
+      <label class="control"><input type="checkbox" id="toggleOverlay" checked> Show overlay</label>
+      <label class="control">Opacity <input type="range" id="opacitySlider" min="30" max="100" value="72"></label>
+    </div>
+    <div class="actions">
+      <button class="btn" id="downloadBtn">Download image</button>
+      <button class="btn ghost" id="resetBtn">Start over</button>
+    </div>
+  </div>
+
+  <details>
+    <summary>Limitations</summary>
+    <ul>
+      <li>Not photorealistic. It cannot show fabric drape, stretch, texture, or how a garment actually looks worn — only its rough position and width against your torso.</li>
+      <li>Only approximates the torso region (shoulders to hips). Sleeve, neckline, and hem detail are not modeled.</li>
+      <li>Needs a clear front-facing photo with your shoulders and hips visible. Side-on poses, heavy cropping, or poor lighting will fail to detect a pose.</li>
+      <li>Garment cutout works by removing a plain background — it will not cleanly separate a garment shot against a busy or textured background, on a model, or on a hanger with visible clutter.</li>
+      <li>The first load downloads about 15&nbsp;MB of pose-detection model files (cached after that by your browser).</li>
+    </ul>
+  </details>
+
+  <footer>
+    <p>Part of <a href="/">Voyeur</a>, a free fashion-tools catalog. No account, no tracking, MIT licensed. <a href="https://github.com/avikabra/voyeur/tree/main/apps/silhouette-tryon">Source</a>.</p>
+  </footer>
+</div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
