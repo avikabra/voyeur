@@ -67,6 +67,13 @@ Listing anatomy: one-line pitch, category tags, GitHub link + star count, and an
 
 That last paragraph is the single most actionable finding in this document. Most viable Voyeur apps will be built on it.
 
+**Technique note (2026-08-10, from building silhouette-tryon):** if you write a from-scratch
+flood-fill background remover instead of reaching for a model, compare each candidate pixel to
+its **seed's fixed color**, not to whichever neighboring pixel just got accepted into the
+region. A chained/adaptive threshold will walk straight through an anti-aliased edge — a few
+pixels of smooth gradient is exactly what it can't resist — and can flood the entire foreground
+as "background." Cost a full debugging pass to find; cheap to avoid once you know.
+
 ---
 
 ## 3. Seed candidate backlog

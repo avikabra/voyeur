@@ -10,8 +10,18 @@ Format: **need** — why it's a gap · feasibility · evidence status
 
 ## Owner-directed priorities (2026-08-09) — build these first
 
-1. **Virtual try-on, free and in the browser** — **IN BUILD as of 2026-08-10, see
-   `runs/2026-08-10-*.md`.** Re-scouted 2026-08-10: photoreal try-on is still confirmed
+1. **Virtual try-on, free and in the browser** — **BUILT as of 2026-08-10, see
+   `runs/2026-08-10-1215.md` and `runs/2026-08-10-1500.md`. Working end-to-end locally
+   (`apps/silhouette-tryon/`, `status: "wip"`), adversarially tested (one real bug found and
+   fixed — see run log), but not yet on `main` and not yet deployed** — this session ran on a
+   harness-assigned git branch (`claude/wonderful-ritchie-brbvkz`) that its instructions forbid
+   pushing off of or opening a PR from without explicit request, which conflicts with this
+   project's own "land on main, no PRs" design (see the 2026-08-10-1500 run log for the full
+   reasoning). **Next session: check whether that branch has been merged to main. If yes,
+   deploy `silhouette-tryon` (Vercel `deploy_to_vercel`, verify the live URL with Playwright,
+   flip `manifest.status` to `"live"`, add it to `shipped.md`) — the build and adversarial work
+   are already done, this is purely the deploy stage. If not yet merged, merging it is the
+   highest-priority task before starting anything new.** Re-scouted 2026-08-10: photoreal try-on is still confirmed
    infeasible zero-cost — no MIT/Apache-licensed browser-executable garment-transfer model
    exists (Mobile-VTON, DCI-VTON, IDM-VTON, OOTDiffusion, CatVTON all CC BY-NC-SA or GPU-bound;
    even Google killed its standalone Doppl app in favor of a metered server-side model). The
