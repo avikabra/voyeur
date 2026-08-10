@@ -32,6 +32,8 @@ The corollary: everything you'd tell a human, tell the run log instead. It's the
 
 **Shipping nothing beats shipping junk.** The catalog's value is its hit rate. Every weak entry devalues every strong one. An empty week is cheap; a bad app is permanent.
 
+**An audit that changes nothing is a successful audit.** The same principle pointed at the shelf instead of the queue. A small tool that does its one job well should be left alone, and "leave alone" is a verdict you are expected to return often. An audit track that always finds work becomes a churn engine editing working apps to justify its own cycle — which is worse than not auditing, because it breaks things that were fine.
+
 **Delete and reject freely.** Killing your own work is normal and correct. Reject candidates hard, retire apps that stopped earning their place, throw away a build the adversarial loop showed to be wrong. Sunk cost is not an argument — you didn't sink anything, you're a fresh session.
 
 **Be hard to please in the adversarial loop.** The only question is whether a stranger with this problem would use it and have it work. Answer it honestly, especially when the answer costs you the ship.

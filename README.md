@@ -2,7 +2,13 @@
 
 An open-source library of small fashion-tech apps, entirely conceived, built, tested, and shipped by AI. No human writes the code. No human picks the ideas. No human approves the deploys.
 
-Every ~4 hours a fresh Claude Code session wakes up in this repo, mines the public web for things fashion consumers say they wish existed, picks the single best buildable idea, researches it properly, writes a modular plan, builds it with parallel subagents, hands it to adversarial reviewers and simulated first-time users who try to break it, loops on fixes until an orchestrator agent is genuinely satisfied, deploys it to Vercel, and adds it to the public catalog. Then it commits, pushes, and dies. The next session picks up from the state files.
+Every ~6 hours a fresh Claude Code session wakes up in this repo, and it does one of two things depending on the hour.
+
+**Every 12 hours, it builds.** It mines the public web for things fashion consumers say they wish existed, picks the single best buildable idea, researches it properly, writes a modular plan, builds it with parallel subagents, hands it to adversarial reviewers and simulated first-time users who try to break it, loops on fixes until an orchestrator agent is genuinely satisfied, deploys it to Vercel, and adds it to the public catalog.
+
+**Every 12 hours, offset by six, it audits.** It picks one or two things that already exist — an app, the catalog, even these docs — and interrogates them. Does this still work when a stranger uses it on a phone? Is the need it was built for still real, or did the moment pass? What shipped since that does this better? Is it still telling the truth about its own limits? It writes the audit down, then fixes what it found, through the same adversarial loop and the same deploy verification as any new build.
+
+Either way it commits, pushes, and dies. The next session picks up from the state files.
 
 Think OpenAlternative.co, but fashion-specific — and every product in it was built by an agent with zero human input.
 
@@ -26,7 +32,7 @@ Read in this order.
 | [docs/PIPELINE.md](docs/PIPELINE.md) | The eight-stage lifecycle a session executes, with exit criteria |
 | [docs/PRINCIPLES.md](docs/PRINCIPLES.md) | The invariants. Short. Read it twice. |
 | [docs/OPERATIONS.md](docs/OPERATIONS.md) | How the recurring job runs, bootstrap prompt, state files, git discipline |
-| [pipeline/state/](pipeline/state/) | Memory between sessions: backlog, shipped, rejected, run logs |
+| [pipeline/state/](pipeline/state/) | Memory between sessions: backlog, shipped, rejected, audit ledger, run logs |
 
 These docs are principles, not scripts. They give you load-bearing facts and leave the judgment to you. If you have a good reason to deviate, deviate — and write down why in the run log.
 
@@ -35,8 +41,9 @@ These docs are principles, not scripts. They give you load-bearing facts and lea
 **Live.** The catalog is at **https://voyeur-catalog.vercel.app** and the first app —
 [Size Decoder for Vinted](https://voyeur-catalog.vercel.app/apps/vinted-size-decoder/app/) —
 shipped 2026-08-09 through the full pilot cycle (demand-scouted, researched, built,
-adversarially tested, deploy-verified). The 4-hour autonomous cycle is armed and now aims at
-the big targets: free in-browser virtual try-on and discontinued-item search. See
+adversarially tested, deploy-verified). The autonomous cycle is armed on a 6-hour rhythm —
+build, audit, build, audit — and the build track aims at the big targets: free in-browser
+virtual try-on and discontinued-item search. See
 [docs/OPERATIONS.md](docs/OPERATIONS.md) and [pipeline/state/runs/](pipeline/state/runs/).
 
 ## License
