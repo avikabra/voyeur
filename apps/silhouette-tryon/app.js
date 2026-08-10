@@ -2,6 +2,7 @@
 // index.html. Owns no algorithm of its own beyond the landmarks->quad
 // geometry (which is UI-shaped, not a generic reusable module).
 import { initPose, detectPose, LANDMARK } from './pose.js';
+import { initSegmenter, segmentPerson } from './segment.js';
 import { extractGarment, anchorsFromBBox } from './cutout.js';
 import { drawWarpedQuad } from './warp.js';
 
@@ -61,8 +62,10 @@ const resetBtn = $('reset-btn');
 
 // ------------------------------------------------------------------- state
 let landmarker = null;
+let segmenter = null; // optional: null if unavailable/failed to load, never blocks rendering
 let selfieImg = null;
 let selfieLandmarks = null;
+let selfiePersonMaskCanvas = null; // person-confidence mask, built once per selfie, at render resolution
 let garmentCutout = null; // { canvas, bbox, bgRemoved }
 let garmentAnchors = null;
 
@@ -297,7 +300,15 @@ function quadBBox(quad) {
 // draw a visible seam along the two triangles' shared diagonal — that
 // internal edge is a hard clip boundary, not a real edge of the garment,
 // and a shadow computed on the clipped shape alone would show it as one.
-function renderGarmentLayer(cw, ch, garmentSource, srcQuad, dstQuad, opacity) {
+//
+// personMaskCanvas (optional): a per-pixel person-confidence mask built by
+// buildPersonMaskCanvas, same (cw, ch) as this layer. When present, the
+// garment is clipped to it — the single biggest fix for the overlay
+// visibly extending past an arm or off the body onto the background, since
+// the warp quad is derived from a handful of landmark points and knows
+// nothing about the person's actual outline. Optional and best-effort: a
+// missing/failed mask just means no clipping, never a blocked render.
+function renderGarmentLayer(cw, ch, garmentSource, srcQuad, dstQuad, opacity, personMaskCanvas) {
   const layer = document.createElement('canvas');
   layer.width = cw;
   layer.height = ch;
@@ -315,6 +326,44 @@ function renderGarmentLayer(cw, ch, garmentSource, srcQuad, dstQuad, opacity) {
   drawWarpedQuad(lctx, garmentSource, srcQuad, dstQuad, { opacity });
   lctx.filter = 'none';
 
+  // Cheap fake-3D: darken the outer edges of the garment (multiply, black,
+  // partial alpha — never lightens, so there's no blend-mode ambiguity)
+  // so it reads as curving away toward the side seams instead of sitting
+  // perfectly flat. Clipped to the destination quad as a belt-and-suspenders
+  // bound even though multiply-over-transparent is already a no-op by spec.
+  try {
+    lctx.save();
+    lctx.beginPath();
+    lctx.moveTo(dstQuad[0].x, dstQuad[0].y);
+    lctx.lineTo(dstQuad[1].x, dstQuad[1].y);
+    lctx.lineTo(dstQuad[3].x, dstQuad[3].y);
+    lctx.lineTo(dstQuad[2].x, dstQuad[2].y);
+    lctx.closePath();
+    lctx.clip();
+    const wrap = lctx.createLinearGradient(dstQuad[0].x, dstQuad[0].y, dstQuad[1].x, dstQuad[1].y);
+    wrap.addColorStop(0, 'rgba(0,0,0,.35)');
+    wrap.addColorStop(0.22, 'rgba(0,0,0,0)');
+    wrap.addColorStop(0.78, 'rgba(0,0,0,0)');
+    wrap.addColorStop(1, 'rgba(0,0,0,.35)');
+    lctx.globalCompositeOperation = 'multiply';
+    lctx.fillStyle = wrap;
+    lctx.fillRect(0, 0, cw, ch);
+    lctx.restore();
+  } catch (e) {
+    // Purely cosmetic — skip on any failure rather than risk the render.
+  }
+
+  if (personMaskCanvas) {
+    try {
+      lctx.globalCompositeOperation = 'destination-in';
+      lctx.drawImage(personMaskCanvas, 0, 0, cw, ch);
+      lctx.globalCompositeOperation = 'source-over';
+    } catch (e) {
+      // Skip clipping rather than risk the render — an un-clipped overlay
+      // is exactly today's behavior, not a new failure mode.
+    }
+  }
+
   // A soft, low, warm-neutral shadow — grounds the garment in the scene
   // instead of it reading as a flat shape floating on top of the photo.
   // Falls back to a plain (unshadowed) composite on any browser where
@@ -331,6 +380,36 @@ function renderGarmentLayer(cw, ch, garmentSource, srcQuad, dstQuad, opacity) {
   }
 }
 
+// Builds a smooth (cw, ch)-sized grayscale-alpha canvas from a raw person-
+// confidence mask (segment.js's output resolution, e.g. 256x256) — drawn at
+// native mask resolution first, then a single drawImage upscale lets the
+// canvas's own bilinear filtering do the smoothing, which is both cheaper
+// and smoother than a hand-rolled per-output-pixel interpolation loop.
+function buildPersonMaskCanvas(maskResult, cw, ch) {
+  if (!maskResult || !maskResult.data || !maskResult.width || !maskResult.height) return null;
+  const { data, width, height } = maskResult;
+
+  const small = document.createElement('canvas');
+  small.width = width;
+  small.height = height;
+  const sctx = small.getContext('2d');
+  const imgData = sctx.createImageData(width, height);
+  for (let i = 0; i < width * height; i++) {
+    const a = Math.max(0, Math.min(255, Math.round(data[i] * 255)));
+    imgData.data[i * 4 + 3] = a; // RGB channels are irrelevant, only alpha is read (destination-in)
+  }
+  sctx.putImageData(imgData, 0, 0);
+
+  const full = document.createElement('canvas');
+  full.width = cw;
+  full.height = ch;
+  const fctx = full.getContext('2d');
+  fctx.imageSmoothingEnabled = true;
+  fctx.imageSmoothingQuality = 'high';
+  fctx.drawImage(small, 0, 0, cw, ch);
+  return full;
+}
+
 // ------------------------------------------------------------- rendering
 // Everything in here is wrapped: a canvas/geometry failure on some
 // unanticipated input should leave the user with a clear message and a
@@ -338,13 +417,19 @@ function renderGarmentLayer(cw, ch, garmentSource, srcQuad, dstQuad, opacity) {
 // calls — pose.js/cutout.js/warp.js — all guarantee they won't throw, but
 // the geometry glue in this file is app-specific and didn't have the same
 // guarantee until this pass).
+// The processing/display resolution for a given source image — shared
+// between renderPreview (drawing the canvas) and handleSelfieFile (building
+// the person-mask canvas at a matching size) so the two never drift apart.
+function canvasSizeFor(img) {
+  const scale = Math.min(1, CANVAS_MAX_W / img.naturalWidth);
+  return { cw: Math.round(img.naturalWidth * scale), ch: Math.round(img.naturalHeight * scale) };
+}
+
 function renderPreview() {
   if (!selfieImg || !selfieLandmarks || !garmentCutout) return;
 
   try {
-    const scale = Math.min(1, CANVAS_MAX_W / selfieImg.naturalWidth);
-    const cw = Math.round(selfieImg.naturalWidth * scale);
-    const ch = Math.round(selfieImg.naturalHeight * scale);
+    const { cw, ch } = canvasSizeFor(selfieImg);
     canvas.width = cw;
     canvas.height = ch;
 
@@ -360,7 +445,7 @@ function renderPreview() {
     const srcQuad = garmentSrcQuad(garmentAnchors, mirror);
 
     try {
-      renderGarmentLayer(cw, ch, garmentCutout.canvas, srcQuad, dstQuad, opacity);
+      renderGarmentLayer(cw, ch, garmentCutout.canvas, srcQuad, dstQuad, opacity, selfiePersonMaskCanvas);
     } catch (e) {
       // A warp/compositing failure shouldn't blank the whole preview — the
       // selfie stays visible and the user can retry with different photos.
@@ -431,6 +516,17 @@ async function initEngine() {
     loadStatus.hidden = true;
     loadError.hidden = false;
     loadErrorText.textContent = e && e.message ? e.message : 'Something went wrong loading the pose engine.';
+    return;
+  }
+
+  // Best-effort: the person-segmentation model is an optional realism
+  // enhancement (clips the garment to the person's actual outline), not a
+  // required part of the pipeline. Its failure must never block the pose
+  // engine, which just succeeded, from being usable.
+  try {
+    segmenter = await initSegmenter();
+  } catch (e) {
+    segmenter = null;
   }
 }
 
@@ -469,6 +565,19 @@ async function handleSelfieFile(file) {
 
     selfieImg = img;
     selfieLandmarks = result.landmarks;
+
+    // Best-effort, and deliberately not awaited-with-a-status-message: if
+    // this fails or the segmenter never loaded, the render just proceeds
+    // without clipping (today's behavior), never blocking on it.
+    selfiePersonMaskCanvas = null;
+    try {
+      const maskResult = segmentPerson(segmenter, img);
+      const { cw, ch } = canvasSizeFor(img);
+      selfiePersonMaskCanvas = buildPersonMaskCanvas(maskResult, cw, ch);
+    } catch (e) {
+      selfiePersonMaskCanvas = null;
+    }
+
     setStatus(selfieStatus, 'Pose found.');
     const wasHidden = stepGarment.hidden;
     stepGarment.hidden = false;
@@ -513,6 +622,7 @@ async function handleGarmentFile(file) {
 function resetAll() {
   selfieImg = null;
   selfieLandmarks = null;
+  selfiePersonMaskCanvas = null;
   garmentCutout = null;
   garmentAnchors = null;
 
