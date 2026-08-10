@@ -6,4 +6,4 @@ Keep rows in sync with each app's `manifest.json`; the manifest is the source of
 
 | slug | date | live URL | one-liner |
 |---|---|---|---|
-| vinted-size-decoder | 2026-08-09 | https://avikabra.github.io/voyeur/apps/vinted-size-decoder/app/ | Decode Vinted's S/M/L buckets into real UK sizes — what to tick as a buyer, what to write as a seller |
+| vinted-size-decoder | 2026-08-09 | https://voyeur-catalog.vercel.app/apps/vinted-size-decoder/app/ | Decode Vinted's S/M/L buckets into real UK sizes — what to tick as a buyer, what to write as a seller |

@@ -10,18 +10,43 @@ Format: **need** — why it's a gap · feasibility · evidence status
 
 ## Owner-directed priorities (2026-08-09) — build these first
 
-1. **Virtual try-on, free and in the browser** — the biggest shared want in fashion tech;
-   every existing option is app-gated, retailer-embedded, or GPU-priced. · Research the current
-   browser-runnable model landscape EVERY cycle (WebGPU, onnxruntime-web, pose-guided
-   compositing, segmentation + garment warping); build the best try-on that runs at zero cost,
-   stated honestly for what it is. Multi-session build expected. · *Demand is notorious;
-   gather fresh evidence during research, not as a gate.*
-2. **Discontinued-item search** — "the thing I loved got discontinued, where do I find it or
-   its closest match" — currently solved by hand (style codes, RN numbers, Wayback, saved
-   searches). No unified free tool. · Serverless allowed within the catalog project; think
-   guided-search engine (structured queries against marketplaces/archives users can run),
-   image-similarity where zero-cost permits. Multi-session build expected. · *Founding research
-   confirmed no unified tool; refresh evidence during research.*
+1. **Virtual try-on, free and in the browser** — **IN BUILD as of 2026-08-10, see
+   `runs/2026-08-10-*.md`.** Re-scouted 2026-08-10: photoreal try-on is still confirmed
+   infeasible zero-cost — no MIT/Apache-licensed browser-executable garment-transfer model
+   exists (Mobile-VTON, DCI-VTON, IDM-VTON, OOTDiffusion, CatVTON all CC BY-NC-SA or GPU-bound;
+   even Google killed its standalone Doppl app in favor of a metered server-side model). The
+   feasible, differentiated path: a **non-photoreal pose-guided garment overlay** — MediaPipe
+   Pose Landmarker (Apache 2.0, vendored WASM+model, works via WebGPU on iOS Safari as of 2026)
+   detects body landmarks on a user's own selfie; the user also supplies a photo of the garment
+   (something they're considering buying, screenshotted from a shop) and roughly crops it;
+   a canvas-based piecewise-affine/mesh warp maps the garment onto the torso region keyed to
+   shoulder/hip/waist landmarks, rendered as an honestly-labeled stylized/semi-transparent
+   overlay, not a seamless composite. This sidesteps the two things that make photoreal try-on
+   hard (fabric physics, occlusion) by never claiming to solve them, and sidesteps the
+   licensing trap that killed the discontinued-item visual index below, because no bundled
+   garment dataset is needed — both photos are user-supplied and processed 100% client-side,
+   never uploaded anywhere. Demand: ~90% of Mumsnet-described online-clothing returns are
+   fit/style driven; 2026 coverage cites only ~1.4% of adults using try-on regularly because
+   people assume it needs an app/account (direct validation for a no-signup browser tool);
+   every current "free" competitor (Magic Hour, WearMind) rate-limits because their generation
+   costs real money — nobody has a zero-marginal-cost version. Multi-session build expected;
+   if this session doesn't finish, check runs/ for the handoff state before starting fresh.
+2. **Discontinued-item search** — refined 2026-08-10. Live cross-marketplace search and a
+   bundled visual-dupe index are both **ruled out** (see rejected.md 2026-08-10 entries: no
+   free keyless marketplace API exists post eBay-Finding-API shutdown; no rights-clear bulk
+   fashion image corpus exists to build a dupe index from). The buildable, honest version:
+   a **guided search-link generator** — user enters what they know (brand, style name/code,
+   era, category, color); the tool builds correct pre-filled search URLs for eBay, Poshmark,
+   Depop, Vinted, Google Shopping, and Wayback Machine snapshot lookups via plain URL
+   construction (no API, no key), plus surfaces the free public FTC RN-database
+   (ftc.gov/rn-database/search, no key/login) to identify a manufacturer from a garment tag's
+   RN number. Add a localStorage watchlist so a user can save items and re-check later —
+   that's what pushes it past "a chat reply could do this." Demand is real but diffuse across
+   many small threads rather than one loud community (PurseForum, Quora, r/findfashion,
+   r/HelpMeFind); strongest signal is a paid app ("Copped: AI Outfit Finder", 2025) already
+   doing the aggregated version behind a subscription — proves willingness to use this, and
+   the free/no-signup niche is open. Scoped enough to likely ship in one session; strong next
+   pick after try-on reaches a shippable state or if try-on's build stalls.
 
 ## With live demand evidence (from 2026-08-09 pilot scout)
 
