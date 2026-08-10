@@ -12,6 +12,11 @@ the pose landmarker fully client-side with no runtime CDN dependency.
 - `models/pose_landmarker_lite.task` — the Pose Landmarker "lite" model bundle, from
   https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task
   (per the official BlazePose GHUM 3D model card, Apache-2.0, redistributable).
+- `models/selfie_segmenter.tflite` — the Selfie Segmenter model (~250KB, float16), from
+  https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/1/selfie_segmenter.tflite
+  (Apache-2.0, redistributable). Added 2026-08-10 to clip the garment overlay to the person's
+  actual outline instead of the coarser landmark-derived quad — see `segment.js`. Uses the same
+  `vision_bundle.mjs` + WASM runtime already vendored above; no second runtime was added.
 
 All under Apache License 2.0 (see `LICENSE` in this directory) — google-ai-edge/mediapipe,
 homepage http://mediapipe.dev. Downloaded 2026-08-10 for the Voyeur project

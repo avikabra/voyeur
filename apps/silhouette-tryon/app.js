@@ -2,6 +2,7 @@
 // index.html. Owns no algorithm of its own beyond the landmarks->quad
 // geometry (which is UI-shaped, not a generic reusable module).
 import { initPose, detectPose, LANDMARK } from './pose.js';
+import { initSegmenter, segmentPerson } from './segment.js';
 import { extractGarment, anchorsFromBBox } from './cutout.js';
 import { drawWarpedQuad } from './warp.js';
 
@@ -61,8 +62,10 @@ const resetBtn = $('reset-btn');
 
 // ------------------------------------------------------------------- state
 let landmarker = null;
+let segmenter = null; // optional: null if unavailable/failed to load, never blocks rendering
 let selfieImg = null;
 let selfieLandmarks = null;
+let selfiePersonMaskCanvas = null; // person-confidence mask, built once per selfie, at render resolution
 let garmentCutout = null; // { canvas, bbox, bgRemoved }
 let garmentAnchors = null;
 
@@ -223,6 +226,190 @@ function garmentSrcQuad(anchors, mirror) {
   return mirror ? [topRight, topLeft, bottomRight, bottomLeft] : [topLeft, topRight, bottomLeft, bottomRight];
 }
 
+// ---------------------------------------------------- compositing realism
+// Two cheap, model-free techniques that do most of the work of not looking
+// like a sticker pasted on a photo: matching the garment's brightness to
+// the light it's supposedly sitting in, and grounding it with a soft
+// shadow. Both are plain Canvas 2D (ctx.filter), no new dependencies.
+
+// Average perceptual luma (0..255) over an axis-aligned region, sampled on
+// a stride rather than every pixel — the regions here are at most a few
+// hundred px per side, so this stays cheap without needing to be exact.
+// alphaWeighted: when true (reading the *garment* cutout, which carries
+// real transparency), fully/mostly-transparent pixels don't pull the
+// average toward whatever color they happen to hold.
+const LUMA_SAMPLE_STRIDE = 3;
+function regionLuma(ctxSource, x, y, w, h, alphaWeighted) {
+  const ix = Math.max(0, Math.round(x));
+  const iy = Math.max(0, Math.round(y));
+  const iw = Math.max(1, Math.min(Math.round(w), ctxSource.canvas.width - ix));
+  const ih = Math.max(1, Math.min(Math.round(h), ctxSource.canvas.height - iy));
+  if (iw <= 0 || ih <= 0) return null;
+
+  let data;
+  try {
+    data = ctxSource.getImageData(ix, iy, iw, ih).data;
+  } catch (e) {
+    return null; // tainted canvas or other read failure -- just skip harmonization
+  }
+
+  let sum = 0;
+  let weight = 0;
+  for (let py = 0; py < ih; py += LUMA_SAMPLE_STRIDE) {
+    for (let px = 0; px < iw; px += LUMA_SAMPLE_STRIDE) {
+      const o = (py * iw + px) * 4;
+      const a = data[o + 3] / 255;
+      if (alphaWeighted && a < 0.2) continue; // skip near-transparent garment pixels
+      const luma = 0.299 * data[o] + 0.587 * data[o + 1] + 0.114 * data[o + 2];
+      sum += luma * a;
+      weight += a;
+    }
+  }
+  return weight > 0 ? sum / weight : null;
+}
+
+// How strongly the garment's brightness chases the selfie region's — 1 is
+// a full match, 0 is no correction. Partial on purpose: a full match can
+// make a genuinely dark or bright garment photo look wrong/washed out, and
+// this is a preview, not a colorimetric claim.
+const HARMONIZE_STRENGTH = 0.55;
+const HARMONIZE_MIN = 0.6;
+const HARMONIZE_MAX = 1.5;
+
+function garmentBrightnessFilter(selfieLuma, garmentLuma) {
+  if (selfieLuma === null || garmentLuma === null || garmentLuma < 1) return 'none';
+  const fullRatio = selfieLuma / garmentLuma;
+  const ratio = 1 + (fullRatio - 1) * HARMONIZE_STRENGTH;
+  const clamped = Math.max(HARMONIZE_MIN, Math.min(HARMONIZE_MAX, ratio));
+  return `brightness(${clamped.toFixed(3)}) saturate(0.92)`;
+}
+
+// Bounding box of an arbitrary (possibly tilted) quad — used for the luma
+// sample regions, where an approximate box is plenty.
+function quadBBox(quad) {
+  const xs = quad.map((p) => p.x);
+  const ys = quad.map((p) => p.y);
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  return { x, y, w: Math.max(1, Math.max(...xs) - x), h: Math.max(1, Math.max(...ys) - y) };
+}
+
+// Composites the warped garment onto the main canvas as its own layer, so a
+// drop-shadow filter reads the garment's *true* silhouette (the union of
+// both warp triangles) instead of being applied per-triangle, which would
+// draw a visible seam along the two triangles' shared diagonal — that
+// internal edge is a hard clip boundary, not a real edge of the garment,
+// and a shadow computed on the clipped shape alone would show it as one.
+//
+// personMaskCanvas (optional): a per-pixel person-confidence mask built by
+// buildPersonMaskCanvas, same (cw, ch) as this layer. When present, the
+// garment is clipped to it — the single biggest fix for the overlay
+// visibly extending past an arm or off the body onto the background, since
+// the warp quad is derived from a handful of landmark points and knows
+// nothing about the person's actual outline. Optional and best-effort: a
+// missing/failed mask just means no clipping, never a blocked render.
+function renderGarmentLayer(cw, ch, garmentSource, srcQuad, dstQuad, opacity, personMaskCanvas) {
+  const layer = document.createElement('canvas');
+  layer.width = cw;
+  layer.height = ch;
+  const lctx = layer.getContext('2d');
+
+  const selfieBox = quadBBox(dstQuad);
+  const selfieLuma = regionLuma(ctx, selfieBox.x, selfieBox.y, selfieBox.w, selfieBox.h, false);
+  const garmentBox = quadBBox(srcQuad);
+  const garmentCtx = garmentSource.getContext ? garmentSource.getContext('2d') : null;
+  const garmentLuma = garmentCtx
+    ? regionLuma(garmentCtx, garmentBox.x, garmentBox.y, garmentBox.w, garmentBox.h, true)
+    : null;
+
+  lctx.filter = garmentBrightnessFilter(selfieLuma, garmentLuma);
+  drawWarpedQuad(lctx, garmentSource, srcQuad, dstQuad, { opacity });
+  lctx.filter = 'none';
+
+  // Cheap fake-3D: darken the outer edges of the garment (multiply, black,
+  // partial alpha — never lightens, so there's no blend-mode ambiguity)
+  // so it reads as curving away toward the side seams instead of sitting
+  // perfectly flat. Clipped to the destination quad as a belt-and-suspenders
+  // bound even though multiply-over-transparent is already a no-op by spec.
+  try {
+    lctx.save();
+    lctx.beginPath();
+    lctx.moveTo(dstQuad[0].x, dstQuad[0].y);
+    lctx.lineTo(dstQuad[1].x, dstQuad[1].y);
+    lctx.lineTo(dstQuad[3].x, dstQuad[3].y);
+    lctx.lineTo(dstQuad[2].x, dstQuad[2].y);
+    lctx.closePath();
+    lctx.clip();
+    const wrap = lctx.createLinearGradient(dstQuad[0].x, dstQuad[0].y, dstQuad[1].x, dstQuad[1].y);
+    wrap.addColorStop(0, 'rgba(0,0,0,.35)');
+    wrap.addColorStop(0.22, 'rgba(0,0,0,0)');
+    wrap.addColorStop(0.78, 'rgba(0,0,0,0)');
+    wrap.addColorStop(1, 'rgba(0,0,0,.35)');
+    lctx.globalCompositeOperation = 'multiply';
+    lctx.fillStyle = wrap;
+    lctx.fillRect(0, 0, cw, ch);
+    lctx.restore();
+  } catch (e) {
+    // Purely cosmetic — skip on any failure rather than risk the render.
+  }
+
+  if (personMaskCanvas) {
+    try {
+      lctx.globalCompositeOperation = 'destination-in';
+      lctx.drawImage(personMaskCanvas, 0, 0, cw, ch);
+      lctx.globalCompositeOperation = 'source-over';
+    } catch (e) {
+      // Skip clipping rather than risk the render — an un-clipped overlay
+      // is exactly today's behavior, not a new failure mode.
+    }
+  }
+
+  // A soft, low, warm-neutral shadow — grounds the garment in the scene
+  // instead of it reading as a flat shape floating on top of the photo.
+  // Falls back to a plain (unshadowed) composite on any browser where
+  // ctx.filter/drop-shadow isn't supported; the CSS filter API has been a
+  // baseline feature for years, but this must never be the thing that
+  // breaks the preview on an older device.
+  try {
+    ctx.save();
+    ctx.filter = 'drop-shadow(0 6px 10px rgba(15,16,25,.32)) drop-shadow(0 1px 2px rgba(15,16,25,.22))';
+    ctx.drawImage(layer, 0, 0);
+    ctx.restore();
+  } catch (e) {
+    ctx.drawImage(layer, 0, 0);
+  }
+}
+
+// Builds a smooth (cw, ch)-sized grayscale-alpha canvas from a raw person-
+// confidence mask (segment.js's output resolution, e.g. 256x256) — drawn at
+// native mask resolution first, then a single drawImage upscale lets the
+// canvas's own bilinear filtering do the smoothing, which is both cheaper
+// and smoother than a hand-rolled per-output-pixel interpolation loop.
+function buildPersonMaskCanvas(maskResult, cw, ch) {
+  if (!maskResult || !maskResult.data || !maskResult.width || !maskResult.height) return null;
+  const { data, width, height } = maskResult;
+
+  const small = document.createElement('canvas');
+  small.width = width;
+  small.height = height;
+  const sctx = small.getContext('2d');
+  const imgData = sctx.createImageData(width, height);
+  for (let i = 0; i < width * height; i++) {
+    const a = Math.max(0, Math.min(255, Math.round(data[i] * 255)));
+    imgData.data[i * 4 + 3] = a; // RGB channels are irrelevant, only alpha is read (destination-in)
+  }
+  sctx.putImageData(imgData, 0, 0);
+
+  const full = document.createElement('canvas');
+  full.width = cw;
+  full.height = ch;
+  const fctx = full.getContext('2d');
+  fctx.imageSmoothingEnabled = true;
+  fctx.imageSmoothingQuality = 'high';
+  fctx.drawImage(small, 0, 0, cw, ch);
+  return full;
+}
+
 // ------------------------------------------------------------- rendering
 // Everything in here is wrapped: a canvas/geometry failure on some
 // unanticipated input should leave the user with a clear message and a
@@ -230,13 +417,19 @@ function garmentSrcQuad(anchors, mirror) {
 // calls — pose.js/cutout.js/warp.js — all guarantee they won't throw, but
 // the geometry glue in this file is app-specific and didn't have the same
 // guarantee until this pass).
+// The processing/display resolution for a given source image — shared
+// between renderPreview (drawing the canvas) and handleSelfieFile (building
+// the person-mask canvas at a matching size) so the two never drift apart.
+function canvasSizeFor(img) {
+  const scale = Math.min(1, CANVAS_MAX_W / img.naturalWidth);
+  return { cw: Math.round(img.naturalWidth * scale), ch: Math.round(img.naturalHeight * scale) };
+}
+
 function renderPreview() {
   if (!selfieImg || !selfieLandmarks || !garmentCutout) return;
 
   try {
-    const scale = Math.min(1, CANVAS_MAX_W / selfieImg.naturalWidth);
-    const cw = Math.round(selfieImg.naturalWidth * scale);
-    const ch = Math.round(selfieImg.naturalHeight * scale);
+    const { cw, ch } = canvasSizeFor(selfieImg);
     canvas.width = cw;
     canvas.height = ch;
 
@@ -252,26 +445,11 @@ function renderPreview() {
     const srcQuad = garmentSrcQuad(garmentAnchors, mirror);
 
     try {
-      drawWarpedQuad(ctx, garmentCutout.canvas, srcQuad, dstQuad, { opacity });
+      renderGarmentLayer(cw, ch, garmentCutout.canvas, srcQuad, dstQuad, opacity, selfiePersonMaskCanvas);
     } catch (e) {
-      // A warp failure shouldn't blank the whole preview — the selfie stays
-      // visible and the user can retry with different photos.
+      // A warp/compositing failure shouldn't blank the whole preview — the
+      // selfie stays visible and the user can retry with different photos.
     }
-
-    // Honest framing: outline the overlay quad so it reads as a sketch, not
-    // an attempt to pass as a real photo of the garment on the body.
-    ctx.save();
-    ctx.setLineDash([6, 5]);
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = 'rgba(255,255,255,.85)';
-    ctx.beginPath();
-    ctx.moveTo(dstQuad[0].x, dstQuad[0].y);
-    ctx.lineTo(dstQuad[1].x, dstQuad[1].y);
-    ctx.lineTo(dstQuad[3].x, dstQuad[3].y);
-    ctx.lineTo(dstQuad[2].x, dstQuad[2].y);
-    ctx.closePath();
-    ctx.stroke();
-    ctx.restore();
 
     ctlLengthVal.textContent = lengthFactor.toFixed(2) + '×';
     ctlWidthVal.textContent = widthFactor.toFixed(2) + '×';
@@ -338,6 +516,17 @@ async function initEngine() {
     loadStatus.hidden = true;
     loadError.hidden = false;
     loadErrorText.textContent = e && e.message ? e.message : 'Something went wrong loading the pose engine.';
+    return;
+  }
+
+  // Best-effort: the person-segmentation model is an optional realism
+  // enhancement (clips the garment to the person's actual outline), not a
+  // required part of the pipeline. Its failure must never block the pose
+  // engine, which just succeeded, from being usable.
+  try {
+    segmenter = await initSegmenter();
+  } catch (e) {
+    segmenter = null;
   }
 }
 
@@ -376,6 +565,19 @@ async function handleSelfieFile(file) {
 
     selfieImg = img;
     selfieLandmarks = result.landmarks;
+
+    // Best-effort, and deliberately not awaited-with-a-status-message: if
+    // this fails or the segmenter never loaded, the render just proceeds
+    // without clipping (today's behavior), never blocking on it.
+    selfiePersonMaskCanvas = null;
+    try {
+      const maskResult = segmentPerson(segmenter, img);
+      const { cw, ch } = canvasSizeFor(img);
+      selfiePersonMaskCanvas = buildPersonMaskCanvas(maskResult, cw, ch);
+    } catch (e) {
+      selfiePersonMaskCanvas = null;
+    }
+
     setStatus(selfieStatus, 'Pose found.');
     const wasHidden = stepGarment.hidden;
     stepGarment.hidden = false;
@@ -420,6 +622,7 @@ async function handleGarmentFile(file) {
 function resetAll() {
   selfieImg = null;
   selfieLandmarks = null;
+  selfiePersonMaskCanvas = null;
   garmentCutout = null;
   garmentAnchors = null;
 
