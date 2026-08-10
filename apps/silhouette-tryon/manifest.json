@@ -1,0 +1,36 @@
+{
+  "slug": "silhouette-tryon",
+  "name": "Silhouette Try-On",
+  "need": "See roughly how a garment would sit on you before you buy it — without an app, an account, or a photo upload.",
+  "description": "Upload a photo of yourself and a photo of a garment (a product shot, a screenshot from a shop) and see a rough schematic overlay of where it would sit on your body: its position and width against your shoulders and hips. A MediaPipe pose model (vendored, running entirely in-browser) finds your shoulders and hips; a from-scratch flood-fill removes the garment photo's background; a from-scratch piecewise-affine warp maps the garment onto your torso and draws it as a semi-transparent, dashed-outline overlay — deliberately not photorealistic, so it never claims to show something it can't. Every current try-on tool that looks photoreal is either an app-store download, requires an account, or metes out paid credits per generation, because photoreal garment transfer needs a GPU model that costs money to run per use. This sidesteps that entirely: both photos are processed on your device and never uploaded anywhere, so there is no per-use cost and nothing to meter.",
+  "limitations": [
+    "Not photorealistic. It shows a garment's rough position and width against your torso — not fabric drape, stretch, texture, or how it will actually look worn.",
+    "Only approximates the torso region between shoulders and hips. Sleeves, necklines, hems, and overall garment length are not modeled.",
+    "Needs a clear, front-facing photo with your shoulders and hips both visible. Side-on poses, heavy cropping, or poor lighting will fail to detect a pose rather than guess.",
+    "Garment cutout works by removing a plain or near-uniform background. It will not cleanly separate a garment against a busy or textured background, worn by a model, on a hanger with clutter around it, or under strong shadows.",
+    "The warp assumes the garment photo is roughly front-facing and flat (typical of a product photo). An angled or draped shot will distort more than a flat one.",
+    "Detects one person per photo and picks the most prominent one if several people are in frame.",
+    "First load downloads roughly 15–18MB of pose-detection model files. Cached by the browser after that; works offline from the second load on.",
+    "Says nothing about sizing or fit — it shows where a garment would sit, not whether it would fit."
+  ],
+  "evidence": [
+    "https://www.mumsnet.com/talk/am_i_being_unreasonable/5386604-the-next-big-thing-for-online-clothes-shopping — thread on wanting real virtual try-on for online clothes shopping, noting existing versions have been basic for over a decade",
+    "https://retail-insider.com/retail-insider/2026/07/online-clothing-leads-e-commerce-returns-with-sizing-driving-most-send-backs-overnight-glasses/ — sizing drives most online-clothing returns, 2026 industry data",
+    "https://www.richpanel.com/learn/ecommerce-return-rates — apparel e-commerce return rates run 20-40%, fit and sizing the largest single cause",
+    "https://apps.apple.com/us/app/ai-virtual-try-on-clothes/id6736467247 — a representative paid competitor: $6.99-$24.99 for credit packs, evidence nobody offers a free, unmetered version because photoreal generation costs money per use"
+  ],
+  "status": "wip",
+  "liveUrl": "",
+  "created": "2026-08-10",
+  "updated": "2026-08-10",
+  "tech": [
+    "static",
+    "vanilla-js",
+    "no-build",
+    "mediapipe",
+    "webassembly",
+    "canvas"
+  ],
+  "localRun": "npx serve apps/silhouette-tryon",
+  "license": "MIT"
+}
