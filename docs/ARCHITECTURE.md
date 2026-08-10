@@ -18,7 +18,9 @@ voyeur/
         ├── backlog.md
         ├── shipped.md
         ├── rejected.md
-        └── runs/            # YYYY-MM-DD-HHMM.md per run
+        ├── audits.md        # audit ledger — drives audit target selection
+        ├── audits/          # YYYY-MM-DD-<slug>.md per audited target
+        └── runs/            # YYYY-MM-DD-HHMM.md per run, both tracks
 ```
 
 **Self-contained means self-contained.** No shared component library, no root `package.json` hoisting, no cross-app imports. If two apps need the same size-chart data, each gets its own copy. The cost of duplication is trivial; the cost of a shared dependency breaking six apps at once, with no human to notice, is not. Deleting `apps/<slug>/` must fully remove an app.
