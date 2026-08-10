@@ -5,6 +5,13 @@ import { initPose, detectPose, LANDMARK } from './pose.js';
 import { extractGarment, anchorsFromBBox } from './cutout.js';
 import { drawWarpedQuad } from './warp.js';
 
+// Progressive enhancement: this is deliberately the first statement in this
+// module script (not a separate inline <script>, which the page's own CSP
+// blocks). If this script fails to load or throws before reaching this
+// line, the class is never added and the .nojs message stays visible
+// instead of a broken/hidden UI — same pattern as vinted-size-decoder.
+document.documentElement.classList.add('js');
+
 const MAX_IMAGE_DIM = 1280; // cap decode/processing cost regardless of input size
 const MAX_FILE_BYTES = 30 * 1024 * 1024; // 30MB — friendly reject, not a silent hang
 const CANVAS_MAX_W = 720; // render/display resolution cap

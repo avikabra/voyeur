@@ -37,6 +37,11 @@ const MODEL_PATH = `${VENDOR_BASE}/models/pose_landmarker_lite.task`;
 // couldn't find a clear pose rather than warping onto a guess.
 export const MIN_TORSO_VISIBILITY = 0.5;
 
+// Detect up to this many people per photo, then pick the one with the
+// largest torso as the intended subject (see torsoArea below) — most
+// personal photos have bystanders in them, not just the subject.
+const MAX_POSES = 5;
+
 let modulePromise = null;
 function loadVisionModule() {
   if (!modulePromise) {
@@ -72,7 +77,7 @@ export async function initPose() {
         delegate: 'GPU',
       },
       runningMode: 'IMAGE',
-      numPoses: 1,
+      numPoses: MAX_POSES,
       minPoseDetectionConfidence: 0.5,
       minPosePresenceConfidence: 0.5,
     });
@@ -87,7 +92,7 @@ export async function initPose() {
           delegate: 'CPU',
         },
         runningMode: 'IMAGE',
-        numPoses: 1,
+        numPoses: MAX_POSES,
         minPoseDetectionConfidence: 0.5,
         minPosePresenceConfidence: 0.5,
       });
@@ -95,6 +100,32 @@ export async function initPose() {
       throw new Error('Could not start pose detection on this device.');
     }
   }
+}
+
+const TORSO_INDICES = [
+  LANDMARK.LEFT_SHOULDER,
+  LANDMARK.RIGHT_SHOULDER,
+  LANDMARK.LEFT_HIP,
+  LANDMARK.RIGHT_HIP,
+];
+
+function isConfidentTorso(landmarks) {
+  return TORSO_INDICES.every(
+    (i) => landmarks[i] && landmarks[i].visibility >= MIN_TORSO_VISIBILITY
+  );
+}
+
+// Torso bounding-box area (normalized units), used to pick which detected
+// person to use when more than one is in frame. Photos taken by someone
+// else routinely have bystanders in them; the intended subject is
+// overwhelmingly the largest/closest person, not whichever pose the model
+// happens to list first.
+function torsoArea(landmarks) {
+  const xs = TORSO_INDICES.map((i) => landmarks[i].x);
+  const ys = TORSO_INDICES.map((i) => landmarks[i].y);
+  const w = Math.max(...xs) - Math.min(...xs);
+  const h = Math.max(...ys) - Math.min(...ys);
+  return Math.max(0, w) * Math.max(0, h);
 }
 
 export function detectPose(landmarker, imageElement) {
@@ -111,17 +142,15 @@ export function detectPose(landmarker, imageElement) {
     return null;
   }
 
-  const landmarks = result.landmarks[0];
-  const need = [
-    LANDMARK.LEFT_SHOULDER,
-    LANDMARK.RIGHT_SHOULDER,
-    LANDMARK.LEFT_HIP,
-    LANDMARK.RIGHT_HIP,
-  ];
-  const confident = need.every(
-    (i) => landmarks[i] && landmarks[i].visibility >= MIN_TORSO_VISIBILITY
+  // Multiple people can be detected (numPoses: MAX_POSES above); pick the
+  // most confident-AND-largest torso as the intended subject rather than
+  // just the first pose the model returns.
+  const candidates = result.landmarks.filter(isConfidentTorso);
+  if (candidates.length === 0) return null;
+
+  const landmarks = candidates.reduce((best, cur) =>
+    torsoArea(cur) > torsoArea(best) ? cur : best
   );
-  if (!confident) return null;
 
   return { landmarks };
 }
