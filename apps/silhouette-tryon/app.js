@@ -14,6 +14,7 @@ document.documentElement.classList.add('js');
 
 const MAX_IMAGE_DIM = 1280; // cap decode/processing cost regardless of input size
 const MAX_FILE_BYTES = 30 * 1024 * 1024; // 30MB — friendly reject, not a silent hang
+const MAX_MEGAPIXELS = 40; // post-decode backstop against a small file with huge declared dimensions
 const CANVAS_MAX_W = 720; // render/display resolution cap
 
 // ---------------------------------------------------------------- DOM refs
@@ -66,9 +67,15 @@ let garmentCutout = null; // { canvas, bbox, bgRemoved }
 let garmentAnchors = null;
 
 // -------------------------------------------------------------- utilities
-function setStatus(el, text, busy) {
+// variant: undefined (neutral/success), 'err' (blocked, nothing to show),
+// or 'warn' (soft — proceeded anyway with a caveat, e.g. background removal
+// fell back). Kept visually distinct so success and failure never look
+// identical, which a first-time-user test found genuinely confusing.
+function setStatus(el, text, busy, variant) {
   el.textContent = text || '';
   el.classList.toggle('busy', !!busy);
+  el.classList.toggle('err', variant === 'err');
+  el.classList.toggle('warn', variant === 'warn');
 }
 
 function loadImageFromFile(file) {
@@ -81,6 +88,23 @@ function loadImageFromFile(file) {
   });
 }
 
+// Cheap pre-decode guard against a small file declaring huge pixel
+// dimensions (a "decompression bomb" — a tiny PNG that would expand to
+// gigabytes of raw pixels on decode). Only PNG is peeked directly (its
+// IHDR chunk holds width/height at a fixed offset, byte 16); other formats
+// fall through to the post-decode megapixel check below, which catches the
+// same problem after the fact for a real photo that's merely enormous.
+async function peekPngIsTooLarge(file) {
+  if (file.size < 24) return false;
+  const head = new Uint8Array(await file.slice(0, 24).arrayBuffer());
+  const isPng = head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4e && head[3] === 0x47;
+  if (!isPng) return false;
+  const view = new DataView(head.buffer);
+  const width = view.getUint32(16, false);
+  const height = view.getUint32(20, false);
+  return width * height > MAX_MEGAPIXELS * 1e6;
+}
+
 // Decodes and downscales any input photo to a bounded working size, so a
 // huge camera photo can't hang decoding or blow up canvas memory on a phone.
 // Returns a fresh HTMLImageElement backed by the downscaled bitmap.
@@ -88,6 +112,9 @@ async function loadCappedImage(file, maxDim) {
   if (!file) throw new Error('No file chosen.');
   if (file.size > MAX_FILE_BYTES) {
     throw new Error('That photo is larger than 30MB — try a smaller one.');
+  }
+  if (await peekPngIsTooLarge(file)) {
+    throw new Error("That image's dimensions are too large to process safely — try a smaller photo.");
   }
 
   let w, h, drawSource, bitmap = null;
@@ -105,6 +132,10 @@ async function loadCappedImage(file, maxDim) {
   }
 
   if (!w || !h) throw new Error('Could not read that as an image.');
+  if (w * h > MAX_MEGAPIXELS * 1e6) {
+    if (bitmap && bitmap.close) bitmap.close();
+    throw new Error("That image's dimensions are too large to process safely — try a smaller photo.");
+  }
 
   const scale = Math.min(1, maxDim / Math.max(w, h));
   const cw = Math.max(1, Math.round(w * scale));
@@ -117,9 +148,19 @@ async function loadCappedImage(file, maxDim) {
   wctx.drawImage(drawSource, 0, 0, cw, ch);
   if (bitmap && bitmap.close) bitmap.close();
 
-  const blob = await new Promise((resolve, reject) => {
-    work.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not process that image.'))), 'image/png');
-  });
+  let blob;
+  try {
+    blob = await new Promise((resolve, reject) => {
+      work.toBlob((b) => (b ? resolve(b) : reject(new Error('empty blob'))), 'image/png');
+    });
+  } catch (e) {
+    // Canvas can throw SecurityError ("tainted canvas") for certain crafted
+    // SVGs with external references, even though the browser never actually
+    // fetched them (confirmed: no network request occurs). Surface the same
+    // friendly message as any other unreadable file rather than a raw
+    // browser exception.
+    throw new Error('Could not process that image. Try a JPEG or PNG.');
+  }
   return loadImageFromFile(blob);
 }
 
@@ -148,11 +189,17 @@ function quadFromPose(landmarks, canvasW, canvasH, lengthFactor, widthFactor) {
   // "left"/"right" in the landmark names are anatomical (the subject's own
   // left/right), which doesn't reliably match image-left/image-right once
   // you account for camera angle — re-derive image-left/right from x.
-  const anatLeftIsImgLeft = ls.x <= rs.x;
-  const topL = anatLeftIsImgLeft ? ls : rs;
-  const topR = anatLeftIsImgLeft ? rs : ls;
-  const botL = anatLeftIsImgLeft ? lh : rh;
-  const botR = anatLeftIsImgLeft ? rh : lh;
+  // Shoulders and hips are derived INDEPENDENTLY (not one flag reused for
+  // both): a rotated or weight-on-one-hip pose can have the hips twisted
+  // relative to the shoulders, and reusing the shoulder flag for hips would
+  // silently cross the destination quad into a twisted overlay instead of
+  // an honest "couldn't find a clear pose" message.
+  const shoulderAnatLeftIsImgLeft = ls.x <= rs.x;
+  const hipAnatLeftIsImgLeft = lh.x <= rh.x;
+  const topL = shoulderAnatLeftIsImgLeft ? ls : rs;
+  const topR = shoulderAnatLeftIsImgLeft ? rs : ls;
+  const botL = hipAnatLeftIsImgLeft ? lh : rh;
+  const botR = hipAnatLeftIsImgLeft ? rh : lh;
 
   const shoulderMid = mid(topL, topR);
   const hipMid = mid(botL, botR);
@@ -177,53 +224,95 @@ function garmentSrcQuad(anchors, mirror) {
 }
 
 // ------------------------------------------------------------- rendering
+// Everything in here is wrapped: a canvas/geometry failure on some
+// unanticipated input should leave the user with a clear message and a
+// working "start over" path, never a silently stuck UI (the modules this
+// calls — pose.js/cutout.js/warp.js — all guarantee they won't throw, but
+// the geometry glue in this file is app-specific and didn't have the same
+// guarantee until this pass).
 function renderPreview() {
   if (!selfieImg || !selfieLandmarks || !garmentCutout) return;
 
-  const scale = Math.min(1, CANVAS_MAX_W / selfieImg.naturalWidth);
-  const cw = Math.round(selfieImg.naturalWidth * scale);
-  const ch = Math.round(selfieImg.naturalHeight * scale);
-  canvas.width = cw;
-  canvas.height = ch;
-
-  ctx.clearRect(0, 0, cw, ch);
-  ctx.drawImage(selfieImg, 0, 0, cw, ch);
-
-  const lengthFactor = parseFloat(ctlLength.value);
-  const widthFactor = parseFloat(ctlWidth.value);
-  const opacity = parseFloat(ctlOpacity.value);
-  const mirror = ctlMirror.checked;
-
-  const dstQuad = quadFromPose(selfieLandmarks, cw, ch, lengthFactor, widthFactor);
-  const srcQuad = garmentSrcQuad(garmentAnchors, mirror);
-
   try {
-    drawWarpedQuad(ctx, garmentCutout.canvas, srcQuad, dstQuad, { opacity });
+    const scale = Math.min(1, CANVAS_MAX_W / selfieImg.naturalWidth);
+    const cw = Math.round(selfieImg.naturalWidth * scale);
+    const ch = Math.round(selfieImg.naturalHeight * scale);
+    canvas.width = cw;
+    canvas.height = ch;
+
+    ctx.clearRect(0, 0, cw, ch);
+    ctx.drawImage(selfieImg, 0, 0, cw, ch);
+
+    const lengthFactor = parseFloat(ctlLength.value);
+    const widthFactor = parseFloat(ctlWidth.value);
+    const opacity = parseFloat(ctlOpacity.value);
+    const mirror = ctlMirror.checked;
+
+    const dstQuad = quadFromPose(selfieLandmarks, cw, ch, lengthFactor, widthFactor);
+    const srcQuad = garmentSrcQuad(garmentAnchors, mirror);
+
+    try {
+      drawWarpedQuad(ctx, garmentCutout.canvas, srcQuad, dstQuad, { opacity });
+    } catch (e) {
+      // A warp failure shouldn't blank the whole preview — the selfie stays
+      // visible and the user can retry with different photos.
+    }
+
+    // Honest framing: outline the overlay quad so it reads as a sketch, not
+    // an attempt to pass as a real photo of the garment on the body.
+    ctx.save();
+    ctx.setLineDash([6, 5]);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255,255,255,.85)';
+    ctx.beginPath();
+    ctx.moveTo(dstQuad[0].x, dstQuad[0].y);
+    ctx.lineTo(dstQuad[1].x, dstQuad[1].y);
+    ctx.lineTo(dstQuad[3].x, dstQuad[3].y);
+    ctx.lineTo(dstQuad[2].x, dstQuad[2].y);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+
+    ctlLengthVal.textContent = lengthFactor.toFixed(2) + '×';
+    ctlWidthVal.textContent = widthFactor.toFixed(2) + '×';
+    ctlOpacityVal.textContent = Math.round(opacity * 100) + '%';
+
+    const wasHidden = stepResult.hidden;
+    stepResult.hidden = false;
+    if (wasHidden) revealStep(stepResult);
   } catch (e) {
-    // A warp failure shouldn't blank the whole preview — the selfie stays
-    // visible and the user can retry with different photos.
+    stepResult.hidden = true;
+    setStatus(
+      garmentStatus,
+      'Could not build a preview from these two photos — try a different garment photo.',
+      false,
+      'err'
+    );
   }
+}
 
-  // Honest framing: outline the overlay quad so it reads as a sketch, not
-  // an attempt to pass as a real photo of the garment on the body.
-  ctx.save();
-  ctx.setLineDash([6, 5]);
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = 'rgba(255,255,255,.85)';
-  ctx.beginPath();
-  ctx.moveTo(dstQuad[0].x, dstQuad[0].y);
-  ctx.lineTo(dstQuad[1].x, dstQuad[1].y);
-  ctx.lineTo(dstQuad[3].x, dstQuad[3].y);
-  ctx.lineTo(dstQuad[2].x, dstQuad[2].y);
-  ctx.closePath();
-  ctx.stroke();
-  ctx.restore();
-
-  ctlLengthVal.textContent = lengthFactor.toFixed(2) + '×';
-  ctlWidthVal.textContent = widthFactor.toFixed(2) + '×';
-  ctlOpacityVal.textContent = Math.round(opacity * 100) + '%';
-
-  stepResult.hidden = false;
+// Scroll a newly-revealed step into view and move focus to its heading, so
+// a phone-sized viewport doesn't leave the next step invisible with no cue
+// (steps 2/3 sit well below the fold on a typical phone). Respects
+// prefers-reduced-motion. Mirrors the vinted-size-decoder app's
+// don't-yank-a-page-already-in-view logic.
+function revealStep(stepEl) {
+  const heading = stepEl.querySelector('.step-title');
+  let reduce = false;
+  try {
+    reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  } catch (e) {
+    reduce = false;
+  }
+  try {
+    stepEl.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  } catch (e) {
+    stepEl.scrollIntoView();
+  }
+  if (heading) {
+    if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+    heading.focus({ preventScroll: true });
+  }
 }
 
 let renderQueued = false;
@@ -262,9 +351,12 @@ async function handleSelfieFile(file) {
     selfiePicker.hidden = true;
     selfieLoaded.hidden = false;
 
-    setStatus(selfieStatus, 'Finding your pose…', true);
+    setStatus(selfieStatus, 'Finding your pose — this can take a few seconds and the page may pause…', true);
     // Yield a frame so the "busy" status actually paints before the
-    // (synchronous, CPU-bound) detection call blocks the main thread.
+    // (synchronous, CPU-bound) detection call blocks the main thread. This
+    // does not make detection itself faster or non-blocking — it only
+    // guarantees the status text above is visible first, so the pause that
+    // follows reads as "working" rather than "broken."
     await new Promise((r) => setTimeout(r, 30));
 
     const result = detectPose(landmarker, img);
@@ -275,7 +367,9 @@ async function handleSelfieFile(file) {
       stepResult.hidden = true;
       setStatus(
         selfieStatus,
-        "Couldn't find a clear pose in that photo. Try a front-facing photo with good light, torso visible, one person in frame."
+        "Couldn't find a clear pose in that photo. Try a front-facing photo with good light, torso visible, one person in frame.",
+        false,
+        'err'
       );
       return;
     }
@@ -283,10 +377,12 @@ async function handleSelfieFile(file) {
     selfieImg = img;
     selfieLandmarks = result.landmarks;
     setStatus(selfieStatus, 'Pose found.');
+    const wasHidden = stepGarment.hidden;
     stepGarment.hidden = false;
+    if (wasHidden) revealStep(stepGarment);
     if (garmentCutout) queueRender();
   } catch (e) {
-    setStatus(selfieStatus, e && e.message ? e.message : 'Could not use that photo.');
+    setStatus(selfieStatus, e && e.message ? e.message : 'Could not use that photo.', false, 'err');
   }
 }
 
@@ -308,14 +404,16 @@ async function handleGarmentFile(file) {
       garmentStatus,
       cutout.bgRemoved
         ? 'Background removed.'
-        : "Couldn't cleanly separate the garment from its background — using the full photo. The width/length sliders can help."
+        : "Couldn't cleanly separate the garment from its background — using the full photo. The width/length sliders can help.",
+      false,
+      cutout.bgRemoved ? undefined : 'warn'
     );
 
     if (selfieImg && selfieLandmarks) queueRender();
   } catch (e) {
     garmentCutout = null;
     garmentAnchors = null;
-    setStatus(garmentStatus, e && e.message ? e.message : 'Could not use that photo.');
+    setStatus(garmentStatus, e && e.message ? e.message : 'Could not use that photo.', false, 'err');
   }
 }
 

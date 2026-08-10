@@ -107,7 +107,12 @@ p{margin:0 0 .9rem;color:var(--ink-soft)}
   flex:none;width:1.7rem;height:1.7rem;border-radius:50%;background:var(--accent-soft);
   color:var(--accent);font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center;
 }
-.step-title{margin:0;font-size:1.02rem;font-weight:700}
+/* .step-title elements are <h2> (see markup) for a correct heading
+   hierarchy (h1 -> h2, no skipped level) — overriding the page's generic
+   small-caps h2 styling above, which is meant for a different kind of
+   label and would otherwise leak uppercase/letter-spacing/muted-color in. */
+.step-title{margin:0;font-size:1.02rem;font-weight:700;letter-spacing:normal;text-transform:none;color:var(--ink)}
+.step-title:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
 .step-sub{margin:0 0 1rem;font-size:.87rem;color:var(--muted)}
 
 .filebtn{
@@ -127,12 +132,17 @@ p{margin:0 0 .9rem;color:var(--ink-soft)}
   padding:.3rem 0;text-decoration:underline;text-underline-offset:.15em;
 }
 
-.status{font-size:.87rem;color:var(--muted);margin:.5rem 0 0;min-height:1.2em}
+.status{font-size:.87rem;color:var(--muted);margin:.5rem 0 0;min-height:1.2em;font-weight:500}
 .status.busy::before{content:"";display:inline-block;width:.7em;height:.7em;margin-right:.4em;
   border-radius:50%;border:2px solid var(--rule-strong);border-top-color:var(--accent);
   animation:spin .8s linear infinite;vertical-align:-.05em}
 @media (prefers-reduced-motion:reduce){.status.busy::before{animation:none}}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* Success/failure must never look alike — a first-time-user test found the
+   plain neutral-gray status text for both cases genuinely confusing. */
+.status.err{color:var(--err-ink);font-weight:700}
+.status.err::before{content:"⚠ ";font-weight:700}
+.status.warn{color:var(--warn-ink);font-weight:600}
 
 .stage{position:relative;border:1px solid var(--rule-strong);border-radius:12px;overflow:hidden;background:#000;margin:0 0 1rem;touch-action:none}
 .stage canvas{display:block;width:100%;height:auto}
@@ -201,7 +211,7 @@ footer a:hover{color:var(--accent)}
 
     <div class="callout">
       <p><b>What this actually is:</b> a rough, honest fit sketch — your photo's pose, the garment's shape, warped together on a canvas. It cannot show fabric drape, folds, or how the material actually behaves. Think "sizing sketch," not "photo of you wearing it."</p>
-      <p><b>What never happens:</b> your photos are read into the browser's memory and drawn to a canvas — that's it. No upload, no account, no server. Load this page with your network off after the first visit and it still works.</p>
+      <p><b>What never happens:</b> your photos are read into the browser's memory and drawn to a canvas — that's it. No upload, no account, no server. Open this page once, then switch your network off without reloading — it keeps working.</p>
     </div>
 
     <div id="load-status" class="callout" role="status">
@@ -217,7 +227,7 @@ footer a:hover{color:var(--accent)}
     <section class="step" id="step-selfie" hidden>
       <div class="step-head">
         <span class="step-num">1</span>
-        <h3 class="step-title">Your photo</h3>
+        <h2 class="step-title">Your photo</h2>
       </div>
       <p class="step-sub">Front-facing, arms slightly away from your sides, from the waist up at least — good light helps. Only you appear in it, ideally.</p>
 
@@ -245,7 +255,7 @@ footer a:hover{color:var(--accent)}
     <section class="step" id="step-garment" hidden>
       <div class="step-head">
         <span class="step-num">2</span>
-        <h3 class="step-title">The garment</h3>
+        <h2 class="step-title">The garment</h2>
       </div>
       <p class="step-sub">A top or dress on a plain background works best — a screenshot from a shop is exactly what this is built for.</p>
 
@@ -273,13 +283,15 @@ footer a:hover{color:var(--accent)}
     <section class="step" id="step-result" hidden>
       <div class="step-head">
         <span class="step-num">3</span>
-        <h3 class="step-title">Preview</h3>
+        <h2 class="step-title">Preview</h2>
       </div>
 
       <div class="stage" id="stage">
-        <canvas id="canvas"></canvas>
-        <span class="tag">Preview — not a photo</span>
+        <canvas id="canvas" role="img" aria-label="Stylized preview of the garment warped onto your photo's pose — not a real photo of you wearing it"></canvas>
+        <span class="tag" aria-hidden="true">Preview — not a photo</span>
       </div>
+
+      <p class="step-sub">Starting values below come from your detected pose, not fixed defaults — adjust them if the garment runs looser, longer, or shorter than a snug tee.</p>
 
       <div class="controls">
         <div class="control">
@@ -310,7 +322,8 @@ footer a:hover{color:var(--accent)}
     <ul>
       <li>Not photorealistic. It cannot simulate fabric, drape, folds, stretch, or how a material actually moves — it's a warped 2D shape, honestly labeled as one.</li>
       <li>Tops and dresses only, front-facing poses only. Trousers, jackets with structure, and side/angled photos aren't modeled.</li>
-      <li>Pose detection can miss or misjudge a pose in poor light, baggy clothing, unusual angles, or with more than one person in frame — you'll see a clear message rather than a warped guess.</li>
+      <li>Pose detection can miss or misjudge a pose in poor light, baggy clothing, or unusual angles — you'll see a clear message rather than a warped guess. If more than one person is in the photo, it uses whichever person looks largest/closest to the camera, which may not be you.</li>
+      <li>An asymmetric pose (weight on one hip, an arm raised) can visibly skew the overlay — it's still an honest sketch of what was detected, not a sign something's broken.</li>
       <li>Garment background removal is a plain-background heuristic (it samples the four corners of the photo). Busy or textured backgrounds may not cut out cleanly — the length/width sliders exist partly to compensate.</li>
       <li>Runs a large (~18MB) pose-detection model the first time you use it, downloaded once and cached by your browser after.</li>
       <li>Not affiliated with any brand or retailer.</li>

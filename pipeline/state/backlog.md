@@ -31,6 +31,25 @@ Format: **need** — why it's a gap · feasibility · evidence status
    every current "free" competitor (Magic Hour, WearMind) rate-limits because their generation
    costs real money — nobody has a zero-marginal-cost version. Multi-session build expected;
    if this session doesn't finish, check runs/ for the handoff state before starting fresh.
+
+   **Follow-ups identified during the 2026-08-10 adversarial loop, worth a future session:**
+   - *Move pose detection off the main thread.* `landmarker.detect()` runs synchronously and
+     was measured (via CDP CPU throttling) to freeze the tab for ~5 seconds under a modest 4x
+     slowdown — real, not a fig leaf, per the code-reviewer's direct measurement. Currently
+     shipped as an honestly-disclosed limitation (the UI warns "the page may pause" before it
+     happens) rather than fixed, because MediaPipe Tasks Vision running inside a Web Worker
+     (transferring an ImageBitmap in, landmarks back) is a real architecture change that risked
+     more than it was worth to attempt late in a single build session. Worth doing properly.
+   - *True offline-reload, not just stay-on-tab-offline.* The app's assets currently ship with
+     no `Cache-Control` header (confirmed via `curl -I`, only `ETag` is present), so a browser
+     forces revalidation on reload — which fails when offline, breaking the natural reading of
+     "load this page with your network off." Staying on the same tab after going offline works
+     and is verified; reloading does not, and the in-app copy was corrected to only claim the
+     former. Properly fixing this (long-`max-age` immutable caching on `vendor/mediapipe/**`, or
+     a service worker) is a **site-wide** infrastructure change — worth doing once for every app
+     in the catalog, not patched per-app. Whoever picks this up should check what header control
+     the `voyeur-catalog` Vercel project actually exposes (a `vercel.json` `headers` block,
+     if the single-project static-file serving setup supports one).
 2. **Discontinued-item search** — refined 2026-08-10. Live cross-marketplace search and a
    bundled visual-dupe index are both **ruled out** (see rejected.md 2026-08-10 entries: no
    free keyless marketplace API exists post eBay-Finding-API shutdown; no rights-clear bulk

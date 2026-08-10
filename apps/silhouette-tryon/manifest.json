@@ -6,18 +6,20 @@
   "limitations": [
     "Not photorealistic. It cannot simulate fabric, drape, stretch, or how a material actually moves — it's a warped 2D shape, honestly labeled as a preview, not a photo.",
     "Tops and dresses only. Trousers, jackets, and structured outerwear aren't modeled by this version.",
-    "Needs a clear, front-facing, reasonably well-lit photo with your torso visible and (ideally) one person in frame. Pose detection will say so plainly rather than guess when it can't find a confident pose.",
+    "Needs a clear, front-facing, reasonably well-lit photo with your torso visible. If more than one person is in frame, it uses whichever person looks largest/closest to the camera, which may not be you. An asymmetric pose (weight on one hip, an arm raised) can visibly skew the overlay — that's an honest sketch of what was detected, not a bug.",
     "Garment background removal is a plain-background heuristic that samples the photo's four corners — busy or textured backgrounds may not cut out cleanly. The width/length sliders exist partly to compensate.",
     "Only shoulder/hip landmarks drive the warp; it doesn't account for arm position, so garments with distinctive sleeves may look off.",
-    "First use downloads a ~18MB pose-detection model (vendored, not from a CDN) — slow on a poor connection, but one-time and cached after.",
+    "Pose detection runs synchronously on the main thread — the page can visibly pause for a few seconds while it works, worse on slower phones. The status text says so before it happens; this is a known rough edge, not a hang.",
+    "First use downloads a ~18MB pose-detection model (vendored, not from a CDN) — slow on a poor connection, but one-time and cached by the browser after. That caching is best-effort: staying on the page after going offline is verified to work, but reloading the page after going offline isn't guaranteed to.",
     "The vendored pose-detection library (MediaPipe Tasks Vision) contains an internal call to a Google telemetry endpoint that isn't user-disableable at the library level; this app enforces a strict same-origin Content-Security-Policy so the browser itself blocks it rather than relying on removing the code. See vendor/mediapipe/NOTICE.md.",
     "Not affiliated with any brand, retailer, or Google/MediaPipe."
   ],
   "evidence": [
-    "Mumsnet threads on online-clothing return rates driven by fit/style uncertainty — near-90% of described returns are fit-related, not damage/defect.",
-    "2026 press coverage citing only ~1.4% of adults using virtual try-on regularly, attributed to the assumption that it requires an app, account, or subscription — direct validation for a no-signup browser-only tool.",
-    "Google shut down its standalone Doppl try-on app in April 2026, folding the feature into a metered server-side Gemini model — independent confirmation from the best-resourced player that zero-cost client-side photoreal try-on isn't solved, and that every viable free alternative today rate-limits generations because each one costs real money.",
-    "Current 'free' competitors (Magic Hour: 3 free/day then paywall; WearMind: one free try then paywall) confirm both real demand and that nobody has a zero-marginal-cost version — the gap this app fills."
+    "https://www.mumsnet.com/talk/style_and_beauty/3974582-any-tips-on-buying-clothes-online-I-like-to-try-on-in-shops — recurring thread on fit/style uncertainty driving online-clothing returns, not damage or defects.",
+    "https://techcrunch.com/2025/12/11/googles-ai-try-on-feature-for-clothes-now-works-with-just-a-selfie/ — Google's try-on push into Search/Shopping via a metered, server-side Gemini image model, not a free client-side one.",
+    "https://genlook.app/blog/google-doppl-shuts-down-migration — Google shut down its standalone Doppl try-on app in April 2026, folding the feature into that metered server-side model — independent confirmation from the best-resourced player that zero-cost client-side photoreal try-on isn't a solved problem yet.",
+    "https://magichour.ai/products/virtual-try-on — a 'free' competitor that rate-limits to 3 generations/day then paywalls, because each generation costs real inference money; the gap a zero-marginal-cost client-side tool fills.",
+    "https://www.stytrix.com/blog/best-free-ai-virtual-try-on-tools-2026-comparison — 2026 roundup of 'free' try-on tools, all metered/paywalled after a handful of uses, corroborating the pattern above across multiple products rather than one."
   ],
   "status": "wip",
   "liveUrl": "",
