@@ -223,6 +223,114 @@ function garmentSrcQuad(anchors, mirror) {
   return mirror ? [topRight, topLeft, bottomRight, bottomLeft] : [topLeft, topRight, bottomLeft, bottomRight];
 }
 
+// ---------------------------------------------------- compositing realism
+// Two cheap, model-free techniques that do most of the work of not looking
+// like a sticker pasted on a photo: matching the garment's brightness to
+// the light it's supposedly sitting in, and grounding it with a soft
+// shadow. Both are plain Canvas 2D (ctx.filter), no new dependencies.
+
+// Average perceptual luma (0..255) over an axis-aligned region, sampled on
+// a stride rather than every pixel — the regions here are at most a few
+// hundred px per side, so this stays cheap without needing to be exact.
+// alphaWeighted: when true (reading the *garment* cutout, which carries
+// real transparency), fully/mostly-transparent pixels don't pull the
+// average toward whatever color they happen to hold.
+const LUMA_SAMPLE_STRIDE = 3;
+function regionLuma(ctxSource, x, y, w, h, alphaWeighted) {
+  const ix = Math.max(0, Math.round(x));
+  const iy = Math.max(0, Math.round(y));
+  const iw = Math.max(1, Math.min(Math.round(w), ctxSource.canvas.width - ix));
+  const ih = Math.max(1, Math.min(Math.round(h), ctxSource.canvas.height - iy));
+  if (iw <= 0 || ih <= 0) return null;
+
+  let data;
+  try {
+    data = ctxSource.getImageData(ix, iy, iw, ih).data;
+  } catch (e) {
+    return null; // tainted canvas or other read failure -- just skip harmonization
+  }
+
+  let sum = 0;
+  let weight = 0;
+  for (let py = 0; py < ih; py += LUMA_SAMPLE_STRIDE) {
+    for (let px = 0; px < iw; px += LUMA_SAMPLE_STRIDE) {
+      const o = (py * iw + px) * 4;
+      const a = data[o + 3] / 255;
+      if (alphaWeighted && a < 0.2) continue; // skip near-transparent garment pixels
+      const luma = 0.299 * data[o] + 0.587 * data[o + 1] + 0.114 * data[o + 2];
+      sum += luma * a;
+      weight += a;
+    }
+  }
+  return weight > 0 ? sum / weight : null;
+}
+
+// How strongly the garment's brightness chases the selfie region's — 1 is
+// a full match, 0 is no correction. Partial on purpose: a full match can
+// make a genuinely dark or bright garment photo look wrong/washed out, and
+// this is a preview, not a colorimetric claim.
+const HARMONIZE_STRENGTH = 0.55;
+const HARMONIZE_MIN = 0.6;
+const HARMONIZE_MAX = 1.5;
+
+function garmentBrightnessFilter(selfieLuma, garmentLuma) {
+  if (selfieLuma === null || garmentLuma === null || garmentLuma < 1) return 'none';
+  const fullRatio = selfieLuma / garmentLuma;
+  const ratio = 1 + (fullRatio - 1) * HARMONIZE_STRENGTH;
+  const clamped = Math.max(HARMONIZE_MIN, Math.min(HARMONIZE_MAX, ratio));
+  return `brightness(${clamped.toFixed(3)}) saturate(0.92)`;
+}
+
+// Bounding box of an arbitrary (possibly tilted) quad — used for the luma
+// sample regions, where an approximate box is plenty.
+function quadBBox(quad) {
+  const xs = quad.map((p) => p.x);
+  const ys = quad.map((p) => p.y);
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  return { x, y, w: Math.max(1, Math.max(...xs) - x), h: Math.max(1, Math.max(...ys) - y) };
+}
+
+// Composites the warped garment onto the main canvas as its own layer, so a
+// drop-shadow filter reads the garment's *true* silhouette (the union of
+// both warp triangles) instead of being applied per-triangle, which would
+// draw a visible seam along the two triangles' shared diagonal — that
+// internal edge is a hard clip boundary, not a real edge of the garment,
+// and a shadow computed on the clipped shape alone would show it as one.
+function renderGarmentLayer(cw, ch, garmentSource, srcQuad, dstQuad, opacity) {
+  const layer = document.createElement('canvas');
+  layer.width = cw;
+  layer.height = ch;
+  const lctx = layer.getContext('2d');
+
+  const selfieBox = quadBBox(dstQuad);
+  const selfieLuma = regionLuma(ctx, selfieBox.x, selfieBox.y, selfieBox.w, selfieBox.h, false);
+  const garmentBox = quadBBox(srcQuad);
+  const garmentCtx = garmentSource.getContext ? garmentSource.getContext('2d') : null;
+  const garmentLuma = garmentCtx
+    ? regionLuma(garmentCtx, garmentBox.x, garmentBox.y, garmentBox.w, garmentBox.h, true)
+    : null;
+
+  lctx.filter = garmentBrightnessFilter(selfieLuma, garmentLuma);
+  drawWarpedQuad(lctx, garmentSource, srcQuad, dstQuad, { opacity });
+  lctx.filter = 'none';
+
+  // A soft, low, warm-neutral shadow — grounds the garment in the scene
+  // instead of it reading as a flat shape floating on top of the photo.
+  // Falls back to a plain (unshadowed) composite on any browser where
+  // ctx.filter/drop-shadow isn't supported; the CSS filter API has been a
+  // baseline feature for years, but this must never be the thing that
+  // breaks the preview on an older device.
+  try {
+    ctx.save();
+    ctx.filter = 'drop-shadow(0 6px 10px rgba(15,16,25,.32)) drop-shadow(0 1px 2px rgba(15,16,25,.22))';
+    ctx.drawImage(layer, 0, 0);
+    ctx.restore();
+  } catch (e) {
+    ctx.drawImage(layer, 0, 0);
+  }
+}
+
 // ------------------------------------------------------------- rendering
 // Everything in here is wrapped: a canvas/geometry failure on some
 // unanticipated input should leave the user with a clear message and a
@@ -252,26 +360,11 @@ function renderPreview() {
     const srcQuad = garmentSrcQuad(garmentAnchors, mirror);
 
     try {
-      drawWarpedQuad(ctx, garmentCutout.canvas, srcQuad, dstQuad, { opacity });
+      renderGarmentLayer(cw, ch, garmentCutout.canvas, srcQuad, dstQuad, opacity);
     } catch (e) {
-      // A warp failure shouldn't blank the whole preview — the selfie stays
-      // visible and the user can retry with different photos.
+      // A warp/compositing failure shouldn't blank the whole preview — the
+      // selfie stays visible and the user can retry with different photos.
     }
-
-    // Honest framing: outline the overlay quad so it reads as a sketch, not
-    // an attempt to pass as a real photo of the garment on the body.
-    ctx.save();
-    ctx.setLineDash([6, 5]);
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = 'rgba(255,255,255,.85)';
-    ctx.beginPath();
-    ctx.moveTo(dstQuad[0].x, dstQuad[0].y);
-    ctx.lineTo(dstQuad[1].x, dstQuad[1].y);
-    ctx.lineTo(dstQuad[3].x, dstQuad[3].y);
-    ctx.lineTo(dstQuad[2].x, dstQuad[2].y);
-    ctx.closePath();
-    ctx.stroke();
-    ctx.restore();
 
     ctlLengthVal.textContent = lengthFactor.toFixed(2) + '×';
     ctlWidthVal.textContent = widthFactor.toFixed(2) + '×';
