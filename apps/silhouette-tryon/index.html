@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Silhouette Try-On — a free, honest fit preview</title>
+<meta name="description" content="See roughly how a garment sits on you — a stylized preview built from your own photo and a photo of the garment, warped to your pose. Free, no account, nothing ever leaves your device.">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="index,follow">
+<!--
+  Strict same-origin CSP. This is not just defense-in-depth: the vendored
+  MediaPipe library (vendor/mediapipe/, see NOTICE.md) contains an internal
+  telemetry call to a Google logging endpoint that fires regardless of
+  self-hosting the wasm/model assets. connect-src 'self' makes "nothing
+  leaves this device" a property the browser itself enforces, not something
+  that depends on us successfully patching a minified third-party file.
+  wasm-unsafe-eval is required to instantiate the pose-detection WebAssembly
+  module; blob: on worker-src/img-src covers canvas/file-reading internals.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none';">
+<link rel="canonical" href="https://voyeur-catalog.vercel.app/apps/silhouette-tryon/app/">
+<meta property="og:title" content="Silhouette Try-On — a free, honest fit preview">
+<meta property="og:description" content="A stylized garment-fit preview built entirely in your browser. Not a photo — a preview. Nothing you upload ever leaves your device.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://voyeur-catalog.vercel.app/apps/silhouette-tryon/app/">
+<meta property="og:site_name" content="Voyeur">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23101426'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='Georgia, serif' font-style='italic' font-weight='700' font-size='22' fill='%23eef1ff'%3EV%3C/text%3E%3C/svg%3E">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg:#f7f7f9;
+  --panel:#ffffff;
+  --ink:#15161c;
+  --ink-soft:#40424e;
+  --muted:#696c7a;
+  --rule:#e2e3ea;
+  --rule-strong:#cacce0;
+  --accent:#3f37c9;
+  --accent-ink:#ffffff;
+  --accent-soft:rgba(63,55,201,.08);
+  --warn-bg:#fff6e0;
+  --warn-ink:#6b4c00;
+  --warn-rule:#f0dca3;
+  --err-bg:#fdecee;
+  --err-ink:#8a1f2b;
+  --err-rule:#f2c6cb;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --serif:ui-serif,Georgia,"Iowan Old Style","Times New Roman",Times,serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0d0e14;
+    --panel:#161822;
+    --ink:#eef0fa;
+    --ink-soft:#c7c9db;
+    --muted:#8b8ea3;
+    --rule:#282b3a;
+    --rule-strong:#3a3d52;
+    --accent:#8b85f5;
+    --accent-ink:#0d0e14;
+    --accent-soft:rgba(139,133,245,.14);
+    --warn-bg:#2a2308;
+    --warn-ink:#f0d891;
+    --warn-rule:#4a3d12;
+    --err-bg:#2b1216;
+    --err-ink:#f3a9b1;
+    --err-rule:#4a1e26;
+  }
+}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:38rem;margin:0 auto;padding:0 1.1rem}
+a{color:var(--accent);text-underline-offset:.15em}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{font-family:inherit}
+hr{border:0;border-top:1px solid var(--rule);margin:2rem 0}
+
+.masthead{border-bottom:1px solid var(--rule);padding:1.1rem 0}
+.wordmark{
+  display:inline-block;font-family:var(--serif);font-size:1.05rem;font-weight:600;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--muted);text-decoration:none;
+}
+.wordmark:hover{color:var(--accent)}
+
+main{padding:1.75rem 0 3rem}
+h1{font-family:var(--serif);font-size:1.6rem;line-height:1.2;margin:0 0 .6rem;font-weight:600}
+.lede{color:var(--ink-soft);font-size:1.05rem;margin:0 0 1.25rem}
+h2{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 .7rem;font-weight:700}
+p{margin:0 0 .9rem;color:var(--ink-soft)}
+
+.callout{border:1px solid var(--rule-strong);background:var(--panel);border-radius:12px;padding:1rem 1.1rem;margin:0 0 1.5rem}
+.callout p{margin:0 0 .5rem;font-size:.93rem}
+.callout p:last-child{margin-bottom:0}
+.callout.warn{background:var(--warn-bg);border-color:var(--warn-rule);color:var(--warn-ink)}
+.callout.warn p{color:var(--warn-ink)}
+.callout.err{background:var(--err-bg);border-color:var(--err-rule);color:var(--err-ink)}
+.callout.err p{color:var(--err-ink)}
+
+.step{border:1px solid var(--rule-strong);background:var(--panel);border-radius:14px;padding:1.15rem;margin:0 0 1.1rem}
+.step[hidden]{display:none}
+.step-head{display:flex;align-items:center;gap:.6rem;margin:0 0 .8rem}
+.step-num{
+  flex:none;width:1.7rem;height:1.7rem;border-radius:50%;background:var(--accent-soft);
+  color:var(--accent);font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center;
+}
+.step-title{margin:0;font-size:1.02rem;font-weight:700}
+.step-sub{margin:0 0 1rem;font-size:.87rem;color:var(--muted)}
+
+.filebtn{
+  display:inline-flex;align-items:center;gap:.5rem;min-height:48px;padding:.6rem 1.1rem;
+  border:1px dashed var(--rule-strong);border-radius:10px;background:var(--bg);color:var(--ink);
+  font-weight:600;font-size:.95rem;cursor:pointer;width:100%;justify-content:center;
+}
+.filebtn:hover{border-color:var(--accent);color:var(--accent)}
+.filebtn input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+
+.thumbrow{display:flex;align-items:center;gap:.75rem;margin:0 0 .9rem}
+.thumb{width:3.4rem;height:3.4rem;border-radius:8px;border:1px solid var(--rule-strong);object-fit:cover;background:var(--bg);flex:none}
+.thumbmeta{flex:1;min-width:0}
+.thumbmeta .name{font-size:.85rem;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.linkbtn{
+  border:0;background:none;color:var(--accent);font-size:.85rem;font-weight:600;cursor:pointer;
+  padding:.3rem 0;text-decoration:underline;text-underline-offset:.15em;
+}
+
+.status{font-size:.87rem;color:var(--muted);margin:.5rem 0 0;min-height:1.2em}
+.status.busy::before{content:"";display:inline-block;width:.7em;height:.7em;margin-right:.4em;
+  border-radius:50%;border:2px solid var(--rule-strong);border-top-color:var(--accent);
+  animation:spin .8s linear infinite;vertical-align:-.05em}
+@media (prefers-reduced-motion:reduce){.status.busy::before{animation:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.stage{position:relative;border:1px solid var(--rule-strong);border-radius:12px;overflow:hidden;background:#000;margin:0 0 1rem;touch-action:none}
+.stage canvas{display:block;width:100%;height:auto}
+.stage .tag{
+  position:absolute;top:.6rem;left:.6rem;background:rgba(15,16,25,.72);color:#fff;
+  font-size:.68rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  padding:.25rem .55rem;border-radius:999px;pointer-events:none;
+}
+
+.controls{display:grid;gap:.9rem;margin:0 0 .5rem}
+.control label{display:flex;justify-content:space-between;gap:.5rem;font-size:.85rem;font-weight:600;color:var(--ink-soft);margin:0 0 .35rem}
+.control label .val{color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
+input[type="range"]{width:100%;accent-color:var(--accent)}
+.checkrow{display:flex;align-items:center;gap:.5rem;font-size:.9rem;color:var(--ink-soft)}
+.checkrow input{width:1.1rem;height:1.1rem;accent-color:var(--accent)}
+
+.actions{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem}
+.btn{
+  min-height:48px;padding:.6rem 1.15rem;border-radius:10px;border:1px solid var(--accent);
+  background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:.92rem;cursor:pointer;
+}
+.btn:hover{filter:brightness(1.06)}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.ghost:hover{background:var(--accent-soft)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+details.limits{border:1px solid var(--rule-strong);background:var(--panel);border-radius:12px;padding:.9rem 1.1rem;margin:0 0 1.5rem}
+details.limits summary{cursor:pointer;font-weight:700;font-size:.92rem;color:var(--ink)}
+details.limits ul{margin:.8rem 0 0;padding-left:1.2rem;color:var(--ink-soft);font-size:.9rem}
+details.limits li{margin:0 0 .5rem}
+
+.nojs{border:1px solid var(--rule-strong);background:var(--panel);border-radius:12px;padding:1rem 1.1rem;margin:0 0 1.5rem}
+.js .nojs{display:none}
+.js-only{display:none}
+.js .js-only{display:block}
+
+footer{border-top:1px solid var(--rule);padding:1.5rem 0 2.5rem;font-size:.82rem;color:var(--muted)}
+footer p{margin:0 0 .4rem;color:var(--muted)}
+footer a{color:var(--muted)}
+footer a:hover{color:var(--accent)}
+
+@media (min-width:40rem){
+  main{padding:2.5rem 0 3.5rem}
+  h1{font-size:2rem}
+  .lede{font-size:1.15rem}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap"><a class="wordmark" href="https://voyeur-catalog.vercel.app/">Voyeur</a></div>
+</header>
+
+<main>
+<div class="wrap">
+
+  <h1>Silhouette Try-On</h1>
+  <p class="lede">A stylized preview of how a top might sit on you — built from your own photo and a photo of the garment. Not a photo. Nothing you upload ever leaves this device.</p>
+
+  <div class="nojs">
+    <p><b>This tool needs JavaScript</b> to detect your pose and draw the preview — there's no version that works without it, sorry. It still never sends anything anywhere once loaded.</p>
+  </div>
+
+  <div class="js-only">
+
+    <div class="callout">
+      <p><b>What this actually is:</b> a rough, honest fit sketch — your photo's pose, the garment's shape, warped together on a canvas. It cannot show fabric drape, folds, or how the material actually behaves. Think "sizing sketch," not "photo of you wearing it."</p>
+      <p><b>What never happens:</b> your photos are read into the browser's memory and drawn to a canvas — that's it. No upload, no account, no server. Load this page with your network off after the first visit and it still works.</p>
+    </div>
+
+    <div id="load-status" class="callout" role="status">
+      <p id="load-status-text">Loading the pose-detection engine (~18MB, once — cached after) …</p>
+    </div>
+
+    <div id="load-error" class="callout err" role="alert" hidden>
+      <p id="load-error-text"></p>
+      <div class="actions"><button class="btn ghost" id="retry-load">Try again</button></div>
+    </div>
+
+    <!-- Step 1: selfie ---------------------------------------------------->
+    <section class="step" id="step-selfie" hidden>
+      <div class="step-head">
+        <span class="step-num">1</span>
+        <h3 class="step-title">Your photo</h3>
+      </div>
+      <p class="step-sub">Front-facing, arms slightly away from your sides, from the waist up at least — good light helps. Only you appear in it, ideally.</p>
+
+      <div id="selfie-picker">
+        <label class="filebtn" for="selfie-input">
+          <span aria-hidden="true">＋</span> Choose a photo of yourself
+          <input type="file" accept="image/*" id="selfie-input">
+        </label>
+      </div>
+
+      <div id="selfie-loaded" hidden>
+        <div class="thumbrow">
+          <img class="thumb" id="selfie-thumb" alt="">
+          <div class="thumbmeta">
+            <div class="name" id="selfie-name"></div>
+            <button class="linkbtn" id="selfie-change">Choose a different photo</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="status" id="selfie-status" aria-live="polite"></p>
+    </section>
+
+    <!-- Step 2: garment ---------------------------------------------------->
+    <section class="step" id="step-garment" hidden>
+      <div class="step-head">
+        <span class="step-num">2</span>
+        <h3 class="step-title">The garment</h3>
+      </div>
+      <p class="step-sub">A top or dress on a plain background works best — a screenshot from a shop is exactly what this is built for.</p>
+
+      <div id="garment-picker">
+        <label class="filebtn" for="garment-input">
+          <span aria-hidden="true">＋</span> Choose a photo of the garment
+          <input type="file" accept="image/*" id="garment-input">
+        </label>
+      </div>
+
+      <div id="garment-loaded" hidden>
+        <div class="thumbrow">
+          <img class="thumb" id="garment-thumb" alt="">
+          <div class="thumbmeta">
+            <div class="name" id="garment-name"></div>
+            <button class="linkbtn" id="garment-change">Choose a different photo</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="status" id="garment-status" aria-live="polite"></p>
+    </section>
+
+    <!-- Result -------------------------------------------------------------->
+    <section class="step" id="step-result" hidden>
+      <div class="step-head">
+        <span class="step-num">3</span>
+        <h3 class="step-title">Preview</h3>
+      </div>
+
+      <div class="stage" id="stage">
+        <canvas id="canvas"></canvas>
+        <span class="tag">Preview — not a photo</span>
+      </div>
+
+      <div class="controls">
+        <div class="control">
+          <label for="ctl-length">Length <span class="val" id="ctl-length-val"></span></label>
+          <input type="range" id="ctl-length" min="0.7" max="1.9" step="0.01" value="1">
+        </div>
+        <div class="control">
+          <label for="ctl-width">Width <span class="val" id="ctl-width-val"></span></label>
+          <input type="range" id="ctl-width" min="0.85" max="1.4" step="0.01" value="1.12">
+        </div>
+        <div class="control">
+          <label for="ctl-opacity">Overlay strength <span class="val" id="ctl-opacity-val"></span></label>
+          <input type="range" id="ctl-opacity" min="0.4" max="1" step="0.01" value="0.88">
+        </div>
+        <label class="checkrow"><input type="checkbox" id="ctl-mirror"> Mirror the garment image</label>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="download-btn">Download preview</button>
+        <button class="btn ghost" id="reset-btn">Start over</button>
+      </div>
+    </section>
+
+  </div>
+
+  <details class="limits">
+    <summary>What this can't do</summary>
+    <ul>
+      <li>Not photorealistic. It cannot simulate fabric, drape, folds, stretch, or how a material actually moves — it's a warped 2D shape, honestly labeled as one.</li>
+      <li>Tops and dresses only, front-facing poses only. Trousers, jackets with structure, and side/angled photos aren't modeled.</li>
+      <li>Pose detection can miss or misjudge a pose in poor light, baggy clothing, unusual angles, or with more than one person in frame — you'll see a clear message rather than a warped guess.</li>
+      <li>Garment background removal is a plain-background heuristic (it samples the four corners of the photo). Busy or textured backgrounds may not cut out cleanly — the length/width sliders exist partly to compensate.</li>
+      <li>Runs a large (~18MB) pose-detection model the first time you use it, downloaded once and cached by your browser after.</li>
+      <li>Not affiliated with any brand or retailer.</li>
+    </ul>
+  </details>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Nothing you upload leaves your browser. Free, no account.</p>
+    <p><a href="https://voyeur-catalog.vercel.app/">More Voyeur tools</a> &middot; <a href="https://github.com/avikabra/voyeur">Source on GitHub</a></p>
+  </div>
+</footer>
+
+<script>
+document.documentElement.className += ' js';
+</script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
