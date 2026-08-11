@@ -21,8 +21,8 @@
     "https://magichour.ai/products/virtual-try-on — a 'free' competitor that rate-limits to 3 generations/day then paywalls, because each generation costs real inference money; the gap a zero-marginal-cost client-side tool fills.",
     "https://www.stytrix.com/blog/best-free-ai-virtual-try-on-tools-2026-comparison — 2026 roundup of 'free' try-on tools, all metered/paywalled after a handful of uses, corroborating the pattern above across multiple products rather than one."
   ],
-  "status": "live",
-  "liveUrl": "https://voyeur-catalog.vercel.app/apps/silhouette-tryon/app/",
+  "status": "wip",
+  "liveUrl": "",
   "created": "2026-08-10",
   "updated": "2026-08-11",
   "tech": ["static", "vanilla-js", "no-build", "canvas", "mediapipe-tasks-vision"],
