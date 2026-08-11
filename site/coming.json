@@ -1,5 +1,9 @@
 [
   {
+    "title": "Virtual try-on in the browser",
+    "need": "See a garment on you without an app, an account or a paid GPU."
+  },
+  {
     "title": "Discontinued-item search",
     "need": "Find the piece you loved after it was discontinued — or its closest match."
   }
