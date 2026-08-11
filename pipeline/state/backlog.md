@@ -8,38 +8,24 @@ Format: **need** — why it's a gap · feasibility · evidence status
 
 ---
 
-## Owner-directed priorities (2026-08-09) — build these first
+## Owner-directed priorities (2026-08-09)
 
-1. **Virtual try-on, free and in the browser** — **IN BUILD as of 2026-08-10, see
-   `runs/2026-08-10-*.md`.** Re-scouted 2026-08-10: photoreal try-on is still confirmed
-   infeasible zero-cost — no MIT/Apache-licensed browser-executable garment-transfer model
-   exists (Mobile-VTON, DCI-VTON, IDM-VTON, OOTDiffusion, CatVTON all CC BY-NC-SA or GPU-bound;
-   even Google killed its standalone Doppl app in favor of a metered server-side model). The
-   feasible, differentiated path: a **non-photoreal pose-guided garment overlay** — MediaPipe
-   Pose Landmarker (Apache 2.0, vendored WASM+model, works via WebGPU on iOS Safari as of 2026)
-   detects body landmarks on a user's own selfie; the user also supplies a photo of the garment
-   (something they're considering buying, screenshotted from a shop) and roughly crops it;
-   a canvas-based piecewise-affine/mesh warp maps the garment onto the torso region keyed to
-   shoulder/hip/waist landmarks, rendered as an honestly-labeled stylized/semi-transparent
-   overlay, not a seamless composite. This sidesteps the two things that make photoreal try-on
-   hard (fabric physics, occlusion) by never claiming to solve them, and sidesteps the
-   licensing trap that killed the discontinued-item visual index below, because no bundled
-   garment dataset is needed — both photos are user-supplied and processed 100% client-side,
-   never uploaded anywhere. Demand: ~90% of Mumsnet-described online-clothing returns are
-   fit/style driven; 2026 coverage cites only ~1.4% of adults using try-on regularly because
-   people assume it needs an app/account (direct validation for a no-signup browser tool);
-   every current "free" competitor (Magic Hour, WearMind) rate-limits because their generation
-   costs real money — nobody has a zero-marginal-cost version. Multi-session build expected;
-   if this session doesn't finish, check runs/ for the handoff state before starting fresh.
+1. **Virtual try-on, free and in the browser** — **shipped 2026-08-11 as `silhouette-tryon`**
+   (see `runs/2026-08-10-1215.md` for the build, `runs/2026-08-11-0619.md` for the resumed
+   adversarial-verification + deploy session). A non-photoreal pose-guided garment overlay:
+   MediaPipe Pose Landmarker finds shoulders/hips on a user's own selfie, a classical
+   corner-sampled heuristic lifts the background off a user-supplied garment photo, and a
+   piecewise-affine canvas warp maps the garment onto the pose — rendered as an
+   honestly-labeled semi-transparent overlay, never claiming photorealism. Two items below are
+   real follow-up work on the shipped app, not new builds.
 
-   **Follow-ups identified during the 2026-08-10 adversarial loop, worth a future session:**
    - *Move pose detection off the main thread.* `landmarker.detect()` runs synchronously and
      was measured (via CDP CPU throttling) to freeze the tab for ~5 seconds under a modest 4x
      slowdown — real, not a fig leaf, per the code-reviewer's direct measurement. Currently
      shipped as an honestly-disclosed limitation (the UI warns "the page may pause" before it
      happens) rather than fixed, because MediaPipe Tasks Vision running inside a Web Worker
-     (transferring an ImageBitmap in, landmarks back) is a real architecture change that risked
-     more than it was worth to attempt late in a single build session. Worth doing properly.
+     (transferring an ImageBitmap in, landmarks back) is a real architecture change. Worth doing
+     properly in its own session.
    - *True offline-reload, not just stay-on-tab-offline.* The app's assets currently ship with
      no `Cache-Control` header (confirmed via `curl -I`, only `ETag` is present), so a browser
      forces revalidation on reload — which fails when offline, breaking the natural reading of

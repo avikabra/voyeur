@@ -127,7 +127,9 @@ They report to **you, the orchestrator**. You triage, fix, and re-run the loop. 
 
 **Intent.** Get it live and *prove* it's live. A deploy that reports success and serves a broken page is the worst outcome in the pipeline, because nobody is watching.
 
-1. Deploy with the Vercel MCP tools. Project name `voyeur-<slug>`.
+1. Land the app on `main` (apps deploy as part of the single `voyeur-catalog` project — see
+   ARCHITECTURE's deployment model; there is no separate per-app Vercel project). Redeploy with
+   the Vercel MCP tools per OPERATIONS' Deployment stewardship section.
 2. **Verify against the real URL.** Fetch it. Then drive the deployed app with Playwright and complete the core user journey end to end. Production differs from local — asset paths, model file loading, CSP, cold caches. Assume nothing.
 3. Update `manifest.json` with `liveUrl` and `status: "live"`.
 4. Rebuild and redeploy the catalog site so the entry appears.
